@@ -1,36 +1,37 @@
 import { firebase, db } from '../firebase.js';
 import Module from '../models/modulesModel.js';
 import {
-  getFirestore,
   collection,
   doc,
   addDoc,
   getDoc,
   getDocs,
+  query,
+  where,
   updateDoc,
-  deleteDoc,
-  initializeFirestore
+  deleteDoc
 } from 'firebase/firestore';
 import axios from 'axios'; 
-import { getGithubToken } from '../utils.js'
+import { getGithubToken, checkRepo } from '../utils.js'
 import config from '../config.js';
-
-// const BEARER_TOKEN = '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'
-// const db = initializeFirestore(firebase, {
-//     experimentalForceLongPolling: true, // this line
-//     useFetchStreams: false, // and this line
-// })
 
 //get all modules
 
 export const getModules = async (req, res, next) => {
   try {
-    const BEARER_TOKEN = await getGithubToken(db, config.testing_uid)
-    const modules = await getDocs(collection(db, 'modules'));
-    const user = 'dorazhao99'
+    console.log('Params', req.query)
+    const uid = req.query.user
+    const modulesRef = db.collection('modules');
+    const modules = await modulesRef.get();
     const modulesArray = [];
     const urls = [];
     const privModules = [];
+    console.log('uid', uid)
+    const userData = await getGithubToken(db, uid)
+    console.log('User data', userData)
+    const token = userData?.token
+    const user = userData?.userName
+
     if (modules.empty) {
       res.status(400).send('No Products found');
     } else {
@@ -47,17 +48,17 @@ export const getModules = async (req, res, next) => {
         );
         if (doc.data().access <= 2) {
           modulesArray.push(m)
-        } else {
+        } else if (token && user) {
           urls.push(`https://api.github.com/repos/${doc.data().owner}/${doc.data().repo_name}/collaborators/${user}`)
           privModules.push(m)
         }
       });
-
+      
       const requests = urls.map(url => 
         axios.get(url,
           {
             headers: {
-              'Authorization': `Bearer ${BEARER_TOKEN}`
+              'Authorization': `Bearer ${token}`
             }
           }
         )
@@ -86,8 +87,8 @@ export const getModules = async (req, res, next) => {
 export const getModule = async (req, res, next) => {
   console.log('Params', req.query)
 
-  const moduleRef = doc(db, 'modules', req.query.id)
-  const d = await getDoc(moduleRef);
+  const moduleRef = db.collection('modules').doc(req.query.id)
+  const d = await moduleRef.get();
   console.log(d)
   if (!d.exists) {
     res.status(400).send('No doc')
@@ -97,21 +98,76 @@ export const getModule = async (req, res, next) => {
 }
 
 export const createModule = async (req, res, next) => {
-    try {
-      const data = req.body;
-      await addDoc(collection(db, 'modules'), data);
-      res.status(200).send('module created successfully');
-    } catch (error) {
-      res.status(400).send(error.message);
+  // check auth token here
+  const data = req.body;
+  const uid = data.user?.uid
+  console.log('Data User', uid)
+  const userData = await getGithubToken(db, uid)
+  // STEP 1: Check if user is owner
+  const repo = data.repo; 
+  const link = data.llmLink;
+  const repoInfo = checkRepo(repo); 
+  console.log('Repo Info', repoInfo, `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${link}`, userData)
+  const response = await axios.get(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${link}`, {
+    headers: {
+        'Accept': 'application/vnd.github.raw+json',
+        'Authorization': `Bearer ${userData.token}`
+      }
+  })
+  console.log('Response', response)
+  if (response.status === 200) {
+    // STEP 2: Check if module is already added 
+    const modulesRef = collection(db, "modules");
+    const q = query(
+     modulesRef,
+      where("gh_page", "==", repo), // Strict equality check for number
+      where("link", "==", link) // Strict equality check for number
+    );
+    const querySnapshot = await getDocs(q);
+    if (querySnapshot.empty && response.data) {
+        // STEP 3: Add module
+        const data = response.data
+        if (!(data.hasOwnProperty('name') && data.hasOwnProperty('knowledge') && data.hasOwnProperty('description') && data.hasOwnProperty('privacy'))) {
+          res.status(200).send({success: false, message: "Module is missing key elements."})
+        } else {
+          const newModule = {
+            gh_page: repo, 
+            link: link,
+            owner: repoInfo.owner, 
+            repo_name: repoInfo.repo_name, 
+            privacy: data.privacy,
+            name: data.name, 
+            description: data.description
+          };
+          
+          // Add the document
+          addDoc(modulesRef, newModule)
+          .then((docRef) => {
+              console.log("Document written with ID: ", docRef.id);
+              res.status(200).send({success: true, message: newModule})
+          })
+          .catch((error) => {
+            console.error("Error adding document: ", error);
+          });
+        }
+    } 
+    else {
+      res.status(200).send({success: false, message: 'This module already exists.'})
     }
-  };
+  } else if (response.status === 403) {
+    res.status(200).send({success: false, message: 'You must be a collaborator on the repo to add.'})
+  } else {
+    res.status(200).send({success: false, message: 'There was an issue adding the module.'})
+  }
+};
 
 export const readFiles = async(req, res, next) => {
     const data = req.body
     console.log('data', data)
 
     // Get Github API token 
-    const BEARER_TOKEN = await getGithubToken(db, config.testing_uid)
+    const uid = data.uid
+    const userData = await getGithubToken(db, uid)
     
     // 
     const fileName = data.path.split('.')[0]
@@ -119,17 +175,18 @@ export const readFiles = async(req, res, next) => {
       axios.get(`https://api.github.com/repos/${data.owner}/${data.repo}/contents/${fileName}.md`, {
       headers: {
               'Accept': 'application/vnd.github.raw+json',
-              'Authorization': `Bearer ${BEARER_TOKEN}`}}),
+              'Authorization': `Bearer ${userData.token}`}}),
       axios.get(`https://api.github.com/repos/${data.owner}/${data.repo}/contents/${data.path}`, {
           headers: {
               'Accept': 'application/vnd.github.raw+json',
-              'Authorization': `Bearer ${BEARER_TOKEN}`}}),
+              'Authorization': `Bearer ${userData.token}`
+            }
+          }),
     ]
     let files = []
     axios.all(requests)
     .then(axios.spread((...responses) => {
         responses.forEach((response, _) => {
-            console.log('response', response.data)
             files.push(response.data)
         });
         res.status(200).send(files)
@@ -137,15 +194,20 @@ export const readFiles = async(req, res, next) => {
 }
 
 export const getKnowledge = async(req, res, next) => {
-  // try {
+  try {
     const requests = []
+    const links = []
     const data = req.body
-    const BEARER_TOKEN = await getGithubToken(db, config.testing_uid)
+    const uid = req.body.user
+    const userData = await getGithubToken(db, uid)
+    const BEARER_TOKEN = userData?.token
+    console.log('Token', userData, uid, BEARER_TOKEN)
     Object.entries(data.checked).forEach((idx) => {
       console.log('index', idx)
       if (idx[1]) {
           const mod = data.modules.find(item => item.id === idx[0]);
           if (mod) {
+            console.log('Mod', mod)
               const params = {
                   owner: mod.owner,
                   repo: mod.repo,
@@ -158,23 +220,25 @@ export const getKnowledge = async(req, res, next) => {
                       'Authorization': `Bearer ${BEARER_TOKEN}`
                   }
               }))
+              const gh_page = mod.gh_page ? mod.gh_page : ""
+              links.push(gh_page)
           }
       }
     })
     let updatedKnowledge = {}
     axios.all(requests)
     .then(axios.spread((...responses) => {
-        responses.forEach((response, _) => {
+        responses.forEach((response, index) => {
             console.log('response', response)
             if (response.data) {
-              updatedKnowledge[response.data.name] = response.data
+              updatedKnowledge[response.data.name] = {knowledge: response.data, link: links[index]}
             }
         });
         console.log('Updated knowledge', updatedKnowledge)
         res.status(200).send(updatedKnowledge);
     }))
-  // } catch(error) {
-  //   res.status(400).send(error)
-  // }
+  } catch(error) {
+    res.status(400).send(error)
+  }
   
 }
