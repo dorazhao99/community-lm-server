@@ -17,6 +17,10 @@ app.use(express.json());
 //routes
 app.use('/api', moduleRoute);
 
-app.listen(config.port, () =>
-  console.log(`Server is live @ ${config.hostUrl} and connected via cors to ${config.clientUrl}`),
-);
+// app.listen(config.port, () =>
+//   console.log(`Server is live @ ${config.hostUrl} and connected via cors to ${config.clientUrl}`),
+// );
+
+export {
+  app
+}
