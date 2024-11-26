@@ -6,7 +6,7 @@ import config from '../config.js';
 export const getUser = async (req, res, next) => {
     console.log('Params', req.query)
   
-    const userRef = db.collection(db, 'users').doc(req.query.id)
+    const userRef = db.collection('users').doc(req.query.id)
     const d = await userRef.get()
     if (!d.exists) {
       res.status(400).send('No doc')

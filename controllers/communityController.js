@@ -11,22 +11,21 @@ export const getCommunities = async (req, res, next) => {
 
     for (const commDoc of comms.docs) {
         const commData = commDoc.data();
-        const moduleRefs = commData.modules;
 
-        // Fetch authors
-        const modulePromises = moduleRefs.map(ref => ref.get());
-        const moduleSnaps = await Promise.all(modulePromises);
+        // // Fetch authors
+        // const modulePromises = moduleRefs.map(ref => ref.get());
+        // const moduleSnaps = await Promise.all(modulePromises);
 
-        const modules = moduleSnaps.map(moduleSnap => ({
-            id: moduleSnap.id,
-            ...moduleSnap.data()
-        }));
+        // const modules = moduleSnaps.map(moduleSnap => ({
+        //     id: moduleSnap.id,
+        //     ...moduleSnap.data()
+        // }));
 
         const c = new Community(
             commDoc.id,
             commData.name, 
             commData.description, 
-            modules
+            commData.moduleNames
         );
         commsArray.push(c);
     }
