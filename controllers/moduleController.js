@@ -26,9 +26,7 @@ export const getModules = async (req, res, next) => {
     const modulesArray = [];
     const urls = [];
     const privModules = [];
-    console.log('uid', uid)
     const userData = await getGithubToken(db, uid)
-    console.log('User data', userData)
     const token = userData?.token
     const user = userData?.userName
 

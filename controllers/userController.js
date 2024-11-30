@@ -13,7 +13,7 @@ export const getUser = async (req, res, next) => {
     } else {
         const data = d.data()
         const response = {
-            checked: data.checked,
+            checked: data.checked ? data.checked : {},
             userName: data.userName, 
             displayName: data.displayName
         }
@@ -38,6 +38,7 @@ export const createUser = async (req, res, next) => {
                 githubID: data.githubID,
                 userName: screenName, 
                 token: token,
+                checked: {}
             }
             try {
                 await db.collection('users').doc(data.uid).set(d);
@@ -54,8 +55,7 @@ export const createUser = async (req, res, next) => {
                 userName: screenName,
             }
             try {
-                const userRef = db.collection('users').doc(data.uid)
-                await userRef.update(d)
+                await user.update(d)
                 console.log('Document successfully updated!');
                 const result = { uid: data.uid, signedIn: true }
                 res.status(200).send({'success': true, 'res': result})
@@ -65,7 +65,28 @@ export const createUser = async (req, res, next) => {
             }
         }
     }
-    
+}
+
+export const updateChecked= async (req, res, next) => {
+    const data = req.body
+    const docRef = db.collection('users').doc(data.uid)
+    const user = await docRef.get();
+    console.log('User', user)
+    if (!user.exists) {
+        const d = {
+            checked: data.checked,
+        }
+        try {
+            const result = await user.update(d)
+            console.log('Document successfully updated!');
+
+            res.status(200).send({'success': true, 'res': result})
+        } catch (error) {
+            res.status(200).send({'success': false, 'err': error})
+        }
+    } else {
+        res.status(200).send({'success': false, 'err': 'User does not exist'})
+    }
 }
 
 
