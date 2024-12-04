@@ -115,16 +115,19 @@ export const createModule = async (req, res, next) => {
   console.log('Response', response)
   if (response.status === 200) {
     // STEP 2: Check if module is already added 
-    const modulesRef = collection(db, "modules");
-    const q = query(
-     modulesRef,
-      where("gh_page", "==", repo), // Strict equality check for number
-      where("link", "==", link) // Strict equality check for number
-    );
-    const querySnapshot = await getDocs(q);
+    const modulesRef = db.collection("modules");
+    const querySnapshot = await modulesRef.where("gh_page", "==", repo).where("link", "==", link).get();
+    console.log('Query snapshot', querySnapshot, querySnapshot.empty)
     if (querySnapshot.empty && response.data) {
         // STEP 3: Add module
-        const data = response.data
+        let data = response.data
+        try {
+          data = JSON.parse(data)
+        } catch(error) {
+          console.log('Error', error)
+          data = response.data
+        }
+        console.log('data', data, Object.keys(data), data.hasOwnProperty('name'), data.hasOwnProperty('knowledge'), data.hasOwnProperty('description'), data.hasOwnProperty('privacy'))
         if (!(data.hasOwnProperty('name') && data.hasOwnProperty('knowledge') && data.hasOwnProperty('description') && data.hasOwnProperty('privacy'))) {
           res.status(200).send({success: false, message: "Module is missing key elements."})
         } else {
@@ -139,7 +142,7 @@ export const createModule = async (req, res, next) => {
           };
           
           // Add the document
-          addDoc(modulesRef, newModule)
+          await db.collection("modules").add(newModule)
           .then((docRef) => {
               console.log("Document written with ID: ", docRef.id);
               res.status(200).send({success: true, message: newModule})
@@ -195,11 +198,11 @@ export const getKnowledge = async(req, res, next) => {
   try {
     const requests = []
     const links = []
+    const uids = []
     const data = req.body
     const uid = req.body.user
     const userData = await getGithubToken(db, uid)
     const BEARER_TOKEN = userData?.token
-    console.log('Token', userData, uid, BEARER_TOKEN)
     Object.entries(data.checked).forEach((idx) => {
       console.log('index', idx)
       if (idx[1]) {
@@ -220,6 +223,7 @@ export const getKnowledge = async(req, res, next) => {
               }))
               const gh_page = mod.gh_page ? mod.gh_page : ""
               links.push(gh_page)
+              uids.push(idx[0])
           }
       }
     })
@@ -227,9 +231,8 @@ export const getKnowledge = async(req, res, next) => {
     axios.all(requests)
     .then(axios.spread((...responses) => {
         responses.forEach((response, index) => {
-            console.log('response', response)
             if (response.data) {
-              updatedKnowledge[response.data.name] = {knowledge: response.data, link: links[index]}
+              updatedKnowledge[uids[index]] = {knowledge: response.data, link: links[index], name: response.data.name}
             }
         });
         console.log('Updated knowledge', updatedKnowledge)
