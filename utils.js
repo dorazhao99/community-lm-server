@@ -20,11 +20,15 @@ export async function getGithubToken(db, uid)  {
 }
 
 export function checkRepo(repo) {
-    const result = repo.split("/");
-    const owner = result[result.length - 2]
-    const repoName = result[result.length - 1]
+    const updatedLink = repo.replace("https://github.com/", "");
+    console.log(updatedLink)
+    const result = updatedLink.split("/");
+    const owner = result[0]
+    const repoName = result[1]
+    const fileName = result[result.length-1]
     return {
         owner: owner, 
-        repo_name: repoName
+        repo_name: repoName,
+        fileName: fileName
     }
 }
