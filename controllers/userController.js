@@ -1,5 +1,6 @@
 import { db } from '../firebase.js';
 import axios from 'axios';
+import { logger } from '../libs/logger.js'
 import config from '../config.js';
 
 
@@ -55,7 +56,7 @@ export const createUser = async (req, res, next) => {
                 userName: screenName,
             }
             try {
-                await user.update(d)
+                await docRef.update(d)
                 console.log('Document successfully updated!');
                 const result = { uid: data.uid, signedIn: true }
                 res.status(200).send({'success': true, 'res': result})
