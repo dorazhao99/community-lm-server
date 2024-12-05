@@ -1,16 +1,5 @@
-import { firebase, db } from '../firebase.js';
+import { db } from '../firebase.js';
 import Module from '../models/modulesModel.js';
-import {
-  collection,
-  doc,
-  addDoc,
-  getDoc,
-  getDocs,
-  query,
-  where,
-  updateDoc,
-  deleteDoc
-} from 'firebase/firestore';
 import axios from 'axios'; 
 import { getGithubToken, checkRepo } from '../utils.js'
 import config from '../config.js';
@@ -97,26 +86,24 @@ export const getModule = async (req, res, next) => {
 
 export const createModule = async (req, res, next) => {
   // check auth token here
-  const data = req.body;
-  const uid = data.user?.uid
-  console.log('Data User', uid)
+  const body = req.body;
+  const uid = body.user?.uid
   const userData = await getGithubToken(db, uid)
   // STEP 1: Check if user is owner
-  const repo = data.repo; 
-  const link = data.llmLink;
-  const repoInfo = checkRepo(repo); 
-  console.log('Repo Info', repoInfo, `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${link}`, userData)
-  const response = await axios.get(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${link}`, {
+  const link = body.llmLink;
+  const repoInfo = checkRepo(link); 
+  console.log('Repo Info', repoInfo, `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`)
+  const response = await axios.get(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`, {
     headers: {
         'Accept': 'application/vnd.github.raw+json',
         'Authorization': `Bearer ${userData.token}`
       }
   })
-  console.log('Response', response)
+
   if (response.status === 200) {
     // STEP 2: Check if module is already added 
     const modulesRef = db.collection("modules");
-    const querySnapshot = await modulesRef.where("gh_page", "==", repo).where("link", "==", link).get();
+    const querySnapshot = await modulesRef.where("gh_page", "==", link).get();
     console.log('Query snapshot', querySnapshot, querySnapshot.empty)
     if (querySnapshot.empty && response.data) {
         // STEP 3: Add module
@@ -132,8 +119,8 @@ export const createModule = async (req, res, next) => {
           res.status(200).send({success: false, message: "Module is missing key elements."})
         } else {
           const newModule = {
-            gh_page: repo, 
-            link: link,
+            gh_page: body.llmLink, 
+            link: data.knowledge,
             owner: repoInfo.owner, 
             repo_name: repoInfo.repo_name, 
             privacy: data.privacy,
@@ -197,14 +184,25 @@ export const readFiles = async(req, res, next) => {
 export const getKnowledge = async(req, res, next) => {
   try {
     const requests = []
-    const links = []
-    const uids = []
+    const info = []
     const data = req.body
     const uid = req.body.user
     const userData = await getGithubToken(db, uid)
     const BEARER_TOKEN = userData?.token
+
+    const docRef = db.collection('users').doc(uid)
+    const user = await docRef.get();
+    console.log('User', user)
+    if (user.exists) {
+      try {
+        const d = {checked: data.checked}
+        await docRef.update(d)
+      } catch(error) {
+        console.log(error)
+      }
+    }
+
     Object.entries(data.checked).forEach((idx) => {
-      console.log('index', idx)
       if (idx[1]) {
           const mod = data.modules.find(item => item.id === idx[0]);
           if (mod) {
@@ -222,8 +220,7 @@ export const getKnowledge = async(req, res, next) => {
                   }
               }))
               const gh_page = mod.gh_page ? mod.gh_page : ""
-              links.push(gh_page)
-              uids.push(idx[0])
+              info.push({uid: idx[0], link: gh_page, name: mod.name})
           }
       }
     })
@@ -232,13 +229,14 @@ export const getKnowledge = async(req, res, next) => {
     .then(axios.spread((...responses) => {
         responses.forEach((response, index) => {
             if (response.data) {
-              updatedKnowledge[uids[index]] = {knowledge: response.data, link: links[index], name: response.data.name}
+              updatedKnowledge[info[index].uid] = {knowledge: response.data, link: info[index].link, name: info[index].name}
             }
         });
         console.log('Updated knowledge', updatedKnowledge)
         res.status(200).send(updatedKnowledge);
     }))
   } catch(error) {
+    console.log(error)
     res.status(400).send(error)
   }
   

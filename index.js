@@ -1,4 +1,5 @@
 import express from 'express';
+import { morganMiddleware } from './middleware/morganMiddleware.js'
 import cors from 'cors';
 import config from './config.js';
 import moduleRoute from './routes/moduleRoute.js';
@@ -11,6 +12,7 @@ const corsOptions ={
   credentials:true,            //access-control-allow-credentials:true
   optionSuccessStatus:200
 }
+app.use(morganMiddleware);
 app.use(cors(corsOptions));
 app.use(express.json());
 
