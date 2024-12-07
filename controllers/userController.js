@@ -10,7 +10,7 @@ export const getUser = async (req, res, next) => {
     const userRef = db.collection('users').doc(req.query.id)
     const d = await userRef.get()
     if (!d.exists) {
-      res.status(400).send('No doc')
+      res.status(200).send({isUser: false})
     } else {
         const data = d.data()
         const response = {
@@ -18,7 +18,7 @@ export const getUser = async (req, res, next) => {
             userName: data.userName, 
             displayName: data.displayName
         }
-      res.status(200).send(response)
+      res.status(200).send({response: response, isUser: true})
     }
 }
 

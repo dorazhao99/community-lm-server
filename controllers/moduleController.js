@@ -1,7 +1,7 @@
-import { db } from '../firebase.js';
+import { firebase, db } from '../firebase.js';
 import Module from '../models/modulesModel.js';
 import axios from 'axios'; 
-import { getGithubToken, checkRepo } from '../utils.js'
+import { getGithubToken, checkRepo, interpretMarkdown, checkUIDExists } from '../utils.js'
 import config from '../config.js';
 
 //get all modules
@@ -71,6 +71,46 @@ export const getModules = async (req, res, next) => {
   }
 };
 
+export const getUserModules = async (req, res, next) => {
+  try {
+    console.log('Params', req.query)
+    const uid = req.query.user
+
+    const docRef = db.collection('users').doc(uid)
+    const user = await docRef.get();
+    const savedModules = user.data().modules; 
+
+    const modulesRef = db.collection('modules');
+    // const q = query(collection(db, 'modules'), where(documentId(), 'in', savedModules));
+  
+    const modules = []
+    const modulePromises = savedModules.map(mod => modulesRef.doc(mod).get());
+    const moduleSnaps = await Promise.all(modulePromises);
+
+    moduleSnaps.forEach((doc) => {
+      console.log('Doc', doc)
+      const description = doc.data().description ? doc.data().description : ""
+      const m = new Module(
+        doc.id,
+        doc.data().name, 
+        description, 
+        doc.data().link,
+        doc.data().gh_page,
+        doc.data().owner, 
+        doc.data().repo_name
+      );
+      modules.push(m)
+    });
+  
+   console.log(modules)
+   res.status(200).send(modules);
+    
+  } catch (error) {
+    console.error(error)
+    res.status(400).send(error.message);
+  }
+};
+
 export const getModule = async (req, res, next) => {
   console.log('Params', req.query)
 
@@ -84,12 +124,24 @@ export const getModule = async (req, res, next) => {
   }
 }
 
-export const createModule = async (req, res, next) => {
+export const addModule = async (req, res, next) => {
   // check auth token here
   const body = req.body;
-  const uid = body.user?.uid
-  const userData = await getGithubToken(db, uid)
-  // STEP 1: Check if user is owner
+  const uid = body.uid
+  const userRef = db.collection('users').doc(uid)
+
+  // Check if user exists
+  const user= await userRef.get()
+  if (!user.exists) {
+      res.status(400).send({error: 'User does not exist'})
+  }  
+  const userData = user.data()
+  const savedModules = [...userData.modules]
+
+
+
+
+  // STEP 1: Check if user has access
   const link = body.llmLink;
   const repoInfo = checkRepo(link); 
   console.log('Repo Info', repoInfo, `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`)
@@ -101,49 +153,54 @@ export const createModule = async (req, res, next) => {
   })
 
   if (response.status === 200) {
-    // STEP 2: Check if module is already added 
+    // STEP 2: Check if module is added to database
     const modulesRef = db.collection("modules");
     const querySnapshot = await modulesRef.where("gh_page", "==", link).get();
-    console.log('Query snapshot', querySnapshot, querySnapshot.empty)
+    let id = ""
     if (querySnapshot.empty && response.data) {
-        // STEP 3: Add module
+        // STEP 2b: Add module
         let data = response.data
-        try {
-          data = JSON.parse(data)
-        } catch(error) {
-          console.log('Error', error)
-          data = response.data
-        }
-        console.log('data', data, Object.keys(data), data.hasOwnProperty('name'), data.hasOwnProperty('knowledge'), data.hasOwnProperty('description'), data.hasOwnProperty('privacy'))
-        if (!(data.hasOwnProperty('name') && data.hasOwnProperty('knowledge') && data.hasOwnProperty('description') && data.hasOwnProperty('privacy'))) {
-          res.status(200).send({success: false, message: "Module is missing key elements."})
+        let name = interpretMarkdown(data)
+
+        if (!name) {
+          res.status(200).send({success: false, message: "Module is missing name in Markdown."})
         } else {
           const newModule = {
             gh_page: body.llmLink, 
-            link: data.knowledge,
+            link: repoInfo.fileName,
             owner: repoInfo.owner, 
             repo_name: repoInfo.repo_name, 
-            privacy: data.privacy,
-            name: data.name, 
-            description: data.description
+            name: name, 
           };
           
           // Add the document
           await db.collection("modules").add(newModule)
           .then((docRef) => {
+              id = docRef.id
               console.log("Document written with ID: ", docRef.id);
-              res.status(200).send({success: true, message: newModule})
+              savedModules.push(docRef.id)
+              userRef.update({modules: savedModules}).then(() => {
+                res.status(200).send({success: true, message: 'Module added.'})
+              })
           })
           .catch((error) => {
             console.error("Error adding document: ", error);
           });
         }
+    } else {
+      const moduleId = querySnapshot.docs[0].id
+      const isFound = checkUIDExists(savedModules, moduleId)
+      console.log('is found', isFound)
+      if (!isFound) {
+        savedModules.push(querySnapshot.docs[0].id)
+        await userRef.update({modules: savedModules})
+        res.status(200).send({success: true, message: 'Module added.'})
+      } else {
+        res.status(200).send({success: false, message: 'Module already added.'})
+      }
     } 
-    else {
-      res.status(200).send({success: false, message: 'This module already exists.'})
-    }
   } else if (response.status === 403) {
-    res.status(200).send({success: false, message: 'You must be a collaborator on the repo to add.'})
+    res.status(200).send({success: false, message: 'You do not have access to this module.'})
   } else {
     res.status(200).send({success: false, message: 'There was an issue adding the module.'})
   }

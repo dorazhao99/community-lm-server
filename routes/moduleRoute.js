@@ -2,8 +2,9 @@ import express from 'express';
 
 import {
   getModules,
+  getUserModules,
   getModule,
-  createModule, 
+  addModule, 
   readFiles,
   getKnowledge
 } from '../controllers/moduleController.js';
@@ -22,8 +23,9 @@ import {
 const router = express.Router();
 
 router.get('/', getModules);
+router.get('/userModule', getUserModules);
 router.get('/module', getModule)
-router.post('/createModule', createModule)
+router.post('/addModule', addModule)
 router.post('/fetch', readFiles)
 router.post('/get_knowledge', getKnowledge)
 router.get('/communities', getCommunities)
