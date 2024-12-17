@@ -79,7 +79,7 @@ export const getUserModules = async (req, res, next) => {
     const docRef = db.collection('users').doc(uid)
     const user = await docRef.get();
     const savedModules = user.data().modules; 
-
+    console.log(user.data())
     const modulesRef = db.collection('modules');
     // const q = query(collection(db, 'modules'), where(documentId(), 'in', savedModules));
   
