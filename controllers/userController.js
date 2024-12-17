@@ -16,9 +16,10 @@ export const getUser = async (req, res, next) => {
         const response = {
             checked: data.checked ? data.checked : {},
             userName: data.userName, 
-            displayName: data.displayName
+            displayName: data.displayName, 
+            isUser: true
         }
-      res.status(200).send({response: response, isUser: true})
+      res.status(200).send(response)
     }
 }
 
