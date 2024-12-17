@@ -88,18 +88,20 @@ export const getUserModules = async (req, res, next) => {
     const moduleSnaps = await Promise.all(modulePromises);
 
     moduleSnaps.forEach((doc) => {
-      console.log('Doc', doc)
-      const description = doc.data().description ? doc.data().description : ""
-      const m = new Module(
-        doc.id,
-        doc.data().name, 
-        description, 
-        doc.data().link,
-        doc.data().gh_page,
-        doc.data().owner, 
-        doc.data().repo_name
-      );
-      modules.push(m)
+      console.log('Doc', doc.data())
+      if (doc.data()) {
+        const description = doc.data().description ? doc.data().description : ""
+        const m = new Module(
+          doc.id,
+          doc.data().name, 
+          description, 
+          doc.data().link,
+          doc.data().gh_page,
+          doc.data().owner, 
+          doc.data().repo_name
+        );
+        modules.push(m)
+      }
     });
   
    console.log(modules)
@@ -157,12 +159,13 @@ export const addModule = async (req, res, next) => {
     const modulesRef = db.collection("modules");
     const querySnapshot = await modulesRef.where("gh_page", "==", link).get();
     let id = ""
+
     if (querySnapshot.empty && response.data) {
         // STEP 2b: Add module
         let data = response.data
-        let name = interpretMarkdown(data)
+        let info = interpretMarkdown(data)
 
-        if (!name) {
+        if (!info.name) {
           res.status(200).send({success: false, message: "Module is missing name in Markdown."})
         } else {
           const newModule = {
@@ -170,7 +173,9 @@ export const addModule = async (req, res, next) => {
             link: repoInfo.fileName,
             owner: repoInfo.owner, 
             repo_name: repoInfo.repo_name, 
-            name: name, 
+            name: info.name, 
+            slug: info.slug,
+            description: info.description
           };
           
           // Add the document
@@ -190,7 +195,6 @@ export const addModule = async (req, res, next) => {
     } else {
       const moduleId = querySnapshot.docs[0].id
       const isFound = checkUIDExists(savedModules, moduleId)
-      console.log('is found', isFound)
       if (!isFound) {
         savedModules.push(querySnapshot.docs[0].id)
         await userRef.update({modules: savedModules})
