@@ -13,13 +13,17 @@ export const getUser = async (req, res, next) => {
       res.status(200).send({isUser: false})
     } else {
         const data = d.data()
-        const response = {
-            checked: data.checked ? data.checked : {},
-            userName: data.userName, 
-            displayName: data.displayName, 
-            isUser: true
+        if (data) {
+            const response = {
+                checked: data.checked ? data.checked : {},
+                userName: data.userName, 
+                displayName: data.displayName, 
+                isUser: true
+            }
+          res.status(200).send(response)
+        } else {
+            res.status(200).send({isUser: false})
         }
-      res.status(200).send(response)
     }
 }
 
@@ -40,7 +44,8 @@ export const createUser = async (req, res, next) => {
                 githubID: data.githubID,
                 userName: screenName, 
                 token: token,
-                modules: [],
+                modules: ['Owpgm2DXhp0a0dnM1gZa'],
+                numMessages: 0,
                 checked: {}
             }
             try {
@@ -75,16 +80,39 @@ export const updateChecked= async (req, res, next) => {
     const docRef = db.collection('users').doc(data.uid)
     const user = await docRef.get();
     console.log('User', user)
-    if (!user.exists) {
+    if (user.exists) {
         const d = {
             checked: data.checked,
         }
         try {
-            const result = await user.update(d)
+            const result = await docRef.update(d)
             console.log('Document successfully updated!');
 
             res.status(200).send({'success': true, 'res': result})
         } catch (error) {
+            res.status(200).send({'success': false, 'err': error})
+        }
+    } else {
+        res.status(200).send({'success': false, 'err': 'User does not exist'})
+    }
+}
+
+export const updateCount= async(req, res, next) => {
+    const data = req.body
+    console.log('Count', data)
+    const docRef = db.collection('users').doc(data.uid)
+    const user = await docRef.get();
+    if (user.exists) {
+        const storedData = user.data().numMessages ? user.data().numMessages : 0
+        const d = {
+            numMessages: storedData + data.sessionMessages,
+        }
+        try {
+            const result = await docRef.update(d)
+            console.log('Document successfully updated!');
+            res.status(200).send({'success': true, 'res': result})
+        } catch (error) {
+            console.log(error)
             res.status(200).send({'success': false, 'err': error})
         }
     } else {
