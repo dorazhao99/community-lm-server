@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import config from './config.js';
 const sysPrompt = `
 Is the following knowledge relevant to the prompt? 
 Respond with the boolean true if the knowledge is relevant and false if it is NOT relevant. 
@@ -24,7 +25,7 @@ export const queryGPT = async(req, res, next) => {
     const relevantModules = []
 
     const client = new OpenAI({
-        apiKey: '', // This is the default and can be omitted
+        apiKey: config.openai, // This is the default and can be omitted
     });
 
     const gptCalls = []
