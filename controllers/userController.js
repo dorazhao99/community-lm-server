@@ -40,7 +40,7 @@ export const createUser = async (req, res, next) => {
                 githubID: data.githubID,
                 userName: screenName, 
                 token: token,
-                modules: [],
+                modules: ['Owpgm2DXhp0a0dnM1gZa'],
                 checked: {}
             }
             try {
