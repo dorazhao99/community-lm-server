@@ -16,7 +16,8 @@ import {
 import {
   getUser,
   createUser,
-  updateChecked
+  updateChecked,
+  updateCount
 } from '../controllers/userController.js'
 
 
@@ -32,5 +33,6 @@ router.get('/communities', getCommunities)
 router.get('/getUser', getUser)
 router.post('/createUser', createUser)
 router.post('/updateUser', updateChecked)
+router.post('/updateCount', updateCount)
 
 export default router;
