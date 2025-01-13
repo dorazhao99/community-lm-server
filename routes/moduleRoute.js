@@ -20,6 +20,10 @@ import {
   updateCount
 } from '../controllers/userController.js'
 
+import {
+  queryGPT
+} from '../controllers/gptController.js';
+
 
 const router = express.Router();
 
@@ -34,5 +38,7 @@ router.get('/getUser', getUser)
 router.post('/createUser', createUser)
 router.post('/updateUser', updateChecked)
 router.post('/updateCount', updateCount)
+router.post('/queryGPT', queryGPT)
+
 
 export default router;
