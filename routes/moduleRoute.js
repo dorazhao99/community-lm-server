@@ -24,6 +24,9 @@ import {
   queryGPT
 } from '../controllers/gptController.js';
 
+import {
+  storeMessage
+} from '../controllers/messageController.js';
 
 const router = express.Router();
 
@@ -39,6 +42,7 @@ router.post('/createUser', createUser)
 router.post('/updateUser', updateChecked)
 router.post('/updateCount', updateCount)
 router.post('/queryGPT', queryGPT)
+router.post('/storeMessage', storeMessage)
 
 
 export default router;
