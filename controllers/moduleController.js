@@ -164,7 +164,7 @@ export const addModule = async (req, res, next) => {
         // STEP 2b: Add module
         let data = response.data
         let info = interpretMarkdown(data)
-
+        console.log('Info', info)
         if (!info.name) {
           res.status(200).send({success: false, message: "Module is missing name in Markdown."})
         } else {
