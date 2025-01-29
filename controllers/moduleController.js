@@ -7,7 +7,6 @@ import config from '../config.js';
 //get all modules
 
 export const getModules = async (req, res, next) => {
-  try {
     console.log('Params', req.query)
     const uid = req.query.user
     const modulesRef = db.collection('modules');
@@ -27,48 +26,49 @@ export const getModules = async (req, res, next) => {
           doc.id,
           doc.data().name, 
           doc.data().description, 
-          doc.data().access,
           doc.data().link,
           doc.data().gh_page,
           doc.data().owner, 
           doc.data().repo_name
         );
-        if (doc.data().access <= 2) {
-          modulesArray.push(m)
-        } else if (token && user) {
-          urls.push(`https://api.github.com/repos/${doc.data().owner}/${doc.data().repo_name}/collaborators/${user}`)
-          privModules.push(m)
-        }
+        modulesArray.push(m)
+        // if (doc.data().access <= 2) {
+        //   modulesArray.push(m)
+        // } else if (token && user) {
+        //   urls.push(`https://api.github.com/repos/${doc.data().owner}/${doc.data().repo_name}/collaborators/${user}`)
+        //   privModules.push(m)
+        // }
       });
-      
-      const requests = urls.map(url => 
-        axios.get(url,
-          {
-            headers: {
-              'Authorization': `Bearer ${token}`
-            }
-          }
-        )
-      );
-
-      await axios.all(requests)
-      .then(axios.spread((...responses) => {
-        responses.forEach((response, idx) => {
-            if (response.status === 204) {
-              modulesArray.push(privModules[idx])
-            }
-        });
-      }))
-      .catch(error => {
-        // Handle errors
-        console.error(error); 
-    });
-
       res.status(200).send(modulesArray);
-    }
-  } catch (error) {
-    res.status(400).send(error.message);
-  }
+  //     const requests = urls.map(url => 
+  //       axios.get(url,
+  //         {
+  //           headers: {
+  //             'Authorization': `Bearer ${token}`
+  //           }
+  //         }
+  //       )
+  //     );
+
+  //     await axios.all(requests)
+  //     .then(axios.spread((...responses) => {
+  //       responses.forEach((response, idx) => {
+  //           if (response.status === 204) {
+  //             modulesArray.push(privModules[idx])
+  //           }
+  //       });
+  //     }))
+  //     .catch(error => {
+  //       // Handle errors
+  //       console.error(error); 
+  //   });
+
+  //     res.status(200).send(modulesArray);
+  //   }
+  // } catch (error) {
+  //   res.status(400).send(error.message);
+  // }
+}
 };
 
 export const getUserModules = async (req, res, next) => {

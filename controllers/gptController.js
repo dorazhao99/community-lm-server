@@ -45,8 +45,8 @@ export const queryGPT = async(req, res, next) => {
         response.forEach(r => {
             r.logprob.forEach(logprob => {
                 const p = Math.exp(logprob.logprob)
-                console.log(logprob, p)
-                if (logprob.token === 'True' && p > 0.5) {
+                console.log(r.module, logprob, p)
+                if (logprob.token === 'True' && p >= 0.3) {
                     relevantModules.push(r.module)
                 }
             })
