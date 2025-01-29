@@ -105,7 +105,7 @@ export const updateCount= async(req, res, next) => {
     if (user.exists) {
         const storedData = user.data().numMessages ? user.data().numMessages : 0
         const d = {
-            numMessages: storedData + data.sessionMessages,
+            numMessages: storedData + 1,
         }
         try {
             const result = await docRef.update(d)

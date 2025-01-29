@@ -24,6 +24,9 @@ import {
   queryGPT
 } from '../controllers/gptController.js';
 
+import {
+  storeMessage
+} from '../controllers/messageController.js';
 
 const router = express.Router();
 
