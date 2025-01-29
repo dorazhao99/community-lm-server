@@ -32,42 +32,32 @@ export const getModules = async (req, res, next) => {
           doc.data().repo_name
         );
         modulesArray.push(m)
-        // if (doc.data().access <= 2) {
-        //   modulesArray.push(m)
-        // } else if (token && user) {
-        //   urls.push(`https://api.github.com/repos/${doc.data().owner}/${doc.data().repo_name}/collaborators/${user}`)
-        //   privModules.push(m)
-        // }
       });
       res.status(200).send(modulesArray);
-  //     const requests = urls.map(url => 
-  //       axios.get(url,
-  //         {
-  //           headers: {
-  //             'Authorization': `Bearer ${token}`
-  //           }
-  //         }
-  //       )
-  //     );
+}
+};
 
-  //     await axios.all(requests)
-  //     .then(axios.spread((...responses) => {
-  //       responses.forEach((response, idx) => {
-  //           if (response.status === 204) {
-  //             modulesArray.push(privModules[idx])
-  //           }
-  //       });
-  //     }))
-  //     .catch(error => {
-  //       // Handle errors
-  //       console.error(error); 
-  //   });
+export const getGalleryModules = async (req, res, next) => {
+  const modulesRef = db.collection('modules');
+  const modules = await modulesRef.where("isGallery", "==", true).get();
+  const modulesArray = [];
 
-  //     res.status(200).send(modulesArray);
-  //   }
-  // } catch (error) {
-  //   res.status(400).send(error.message);
-  // }
+  if (modules.empty) {
+    res.status(400).send('No Products found');
+  } else {
+    modules.forEach((doc) => {
+      const m = new Module(
+        doc.id,
+        doc.data().name, 
+        doc.data().description, 
+        doc.data().link,
+        doc.data().gh_page,
+        doc.data().owner, 
+        doc.data().repo_name
+      );
+      modulesArray.push(m)
+    });
+    res.status(200).send(modulesArray);
 }
 };
 
@@ -210,12 +200,45 @@ export const addModule = async (req, res, next) => {
   }
 };
 
+
+export const selectModule = async (req, res, next) => {
+  // check auth token here
+  const body = req.body;
+  const uid = body?.uid
+  const moduleId = body?.module 
+  const userRef = db.collection('users').doc(uid)
+
+  // Check if user exists
+  const user= await userRef.get()
+  if (!user.exists) {
+    res.status(400).send({error: 'User does not exist'})
+  }  
+  const userData = user.data()
+  const savedModules = [...userData.modules]
+  const isFound = checkUIDExists(savedModules, moduleId)
+  if (isFound) {
+    res.status(200).send({success: false, message: 'Module already added.'})
+  } else {
+    const querySnapshot = await db.collection("modules").doc(moduleId).get();
+    // const querySnapshot = await modulesRef.where(firebase.firestore.FieldPath.documentId(), "==", moduleId).get();
+    if (querySnapshot.empty && response.data) {
+      res.status(200).send({success: false, message: 'Module does not exist'})
+    } 
+    else {
+      savedModules.push(moduleId)
+      await userRef.update({modules: savedModules})
+      res.status(200).send({success: true, message: 'Module added.'})
+    }
+  }
+};
+
 export const readFiles = async(req, res, next) => {
     const data = req.body
     console.log('data', data)
 
     // Get Github API token 
     const uid = data.uid
+
     const userData = await getGithubToken(db, uid)
     
     // 

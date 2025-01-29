@@ -2,9 +2,11 @@ import express from 'express';
 
 import {
   getModules,
+  getGalleryModules,
   getUserModules,
   getModule,
-  addModule, 
+  addModule,
+  selectModule, 
   readFiles,
   getKnowledge
 } from '../controllers/moduleController.js';
@@ -31,9 +33,11 @@ import {
 const router = express.Router();
 
 router.get('/', getModules);
+router.get('/exploreModules', getGalleryModules);
 router.get('/userModule', getUserModules);
 router.get('/module', getModule)
 router.post('/addModule', addModule)
+router.post('/selectModule', selectModule)
 router.post('/fetch', readFiles)
 router.post('/get_knowledge', getKnowledge)
 router.get('/communities', getCommunities)
