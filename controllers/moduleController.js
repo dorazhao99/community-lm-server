@@ -7,21 +7,20 @@ import config from '../config.js';
 //get all modules
 
 export const getModules = async (req, res, next) => {
-    console.log('Params', req.query)
     const uid = req.query.user
     const modulesRef = db.collection('modules');
     const modules = await modulesRef.get();
     const modulesArray = [];
     const urls = [];
     const privModules = [];
-    const userData = await getGithubToken(db, uid)
-    const token = userData?.token
-    const user = userData?.userName
+
 
     if (modules.empty) {
       res.status(400).send('No Products found');
     } else {
       modules.forEach((doc) => {
+        const queries = doc.data().queries ? doc.data().queries : []
+
         const m = new Module(
           doc.id,
           doc.data().name, 
@@ -29,7 +28,8 @@ export const getModules = async (req, res, next) => {
           doc.data().link,
           doc.data().gh_page,
           doc.data().owner, 
-          doc.data().repo_name
+          doc.data().repo_name,
+          queries
         );
         modulesArray.push(m)
       });
@@ -69,6 +69,7 @@ export const getUserModules = async (req, res, next) => {
     const docRef = db.collection('users').doc(uid)
     const user = await docRef.get();
     const savedModules = user.data().modules; 
+    const checked = user.data().checked;
     console.log(user.data())
     const modulesRef = db.collection('modules');
     // const q = query(collection(db, 'modules'), where(documentId(), 'in', savedModules));
@@ -94,8 +95,7 @@ export const getUserModules = async (req, res, next) => {
       }
     });
   
-   console.log(modules)
-   res.status(200).send(modules);
+   res.status(200).send({modules: modules, checked: checked});
     
   } catch (error) {
     console.error(error)
@@ -104,15 +104,38 @@ export const getUserModules = async (req, res, next) => {
 };
 
 export const getModule = async (req, res, next) => {
-  console.log('Params', req.query)
+  const uid = req.body.user
+  const userData = await getGithubToken(db, uid)
+  
+  let BEARER_TOKEN =  config.devToken
+  if (userData.token) {
+    BEARER_TOKEN = userData.token
+  }
 
   const moduleRef = db.collection('modules').doc(req.query.id)
   const d = await moduleRef.get();
-  console.log(d)
+  
   if (!d.exists) {
-    res.status(400).send('No doc')
+    res.status(200).send({'success': false, 'error': 'Sorry, this module no longer exists.'})
   } else {
-    res.status(200).send(d.data())
+    const repoInfo = checkRepo(d.data().gh_page); 
+
+    axios.get(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`, {
+      headers: {
+          'Accept': 'application/vnd.github.raw+json',
+          'Authorization': `Bearer ${BEARER_TOKEN}`
+        }
+    })
+    .then(response => {
+      if (response.status === 200) {
+        res.status(200).send({'success': true, data: d.data()})
+      } else (
+        res.status(200).send({'success': false, 'error': 'Module was not found. Please try again later.'})
+      )
+    })
+    .catch(error => {
+      res.status(200).send({'success': false, 'error': 'This is a private module. Only users who have authenticated via Github and have access to the module can access this information.'})
+    })
   }
 }
 
@@ -163,9 +186,9 @@ export const addModule = async (req, res, next) => {
             link: repoInfo.fileName,
             owner: repoInfo.owner, 
             repo_name: repoInfo.repo_name, 
-            name: info.name, 
+            name: body.name, 
             slug: info.slug,
-            description: info.description
+            description: body?.description
           };
           
           // Add the document
@@ -175,7 +198,7 @@ export const addModule = async (req, res, next) => {
               console.log("Document written with ID: ", docRef.id);
               savedModules.push(docRef.id)
               userRef.update({modules: savedModules}).then(() => {
-                res.status(200).send({success: true, message: 'Module added.'})
+                res.status(200).send({success: true, message: 'Module added.', id: docRef.idsuccess})
               })
           })
           .catch((error) => {
@@ -188,7 +211,7 @@ export const addModule = async (req, res, next) => {
       if (!isFound) {
         savedModules.push(querySnapshot.docs[0].id)
         await userRef.update({modules: savedModules})
-        res.status(200).send({success: true, message: 'Module added.'})
+        res.status(200).send({success: true, message: 'Module added.', id: moduleId})
       } else {
         res.status(200).send({success: false, message: 'Module already added.'})
       }
@@ -215,20 +238,45 @@ export const selectModule = async (req, res, next) => {
   }  
   const userData = user.data()
   const savedModules = [...userData.modules]
-  const isFound = checkUIDExists(savedModules, moduleId)
-  if (isFound) {
-    res.status(200).send({success: false, message: 'Module already added.'})
-  } else {
-    const querySnapshot = await db.collection("modules").doc(moduleId).get();
-    // const querySnapshot = await modulesRef.where(firebase.firestore.FieldPath.documentId(), "==", moduleId).get();
-    if (querySnapshot.empty && response.data) {
-      res.status(200).send({success: false, message: 'Module does not exist'})
-    } 
-    else {
+  const checked = {...userData.checked}
+  const querySnapshot = await db.collection("modules").doc(moduleId).get();
+
+  if (querySnapshot.empty && response.data) {
+    res.status(200).send({success: false, message: 'Module does not exist'})
+  } 
+  else {
+    const isFound = checkUIDExists(savedModules, moduleId)
+    console.log('found', isFound)
+    if (!isFound) {
       savedModules.push(moduleId)
-      await userRef.update({modules: savedModules})
-      res.status(200).send({success: true, message: 'Module added.'})
     }
+    checked[moduleId] = true 
+  
+    await userRef.update({modules: savedModules, checked: checked})
+
+    const modulesRef = db.collection('modules');
+    const modules = []
+    const modulePromises = savedModules.map(mod => modulesRef.doc(mod).get());
+    const moduleSnaps = await Promise.all(modulePromises);
+
+    moduleSnaps.forEach((doc) => {
+      console.log('Doc', doc.data())
+      if (doc.data()) {
+        const description = doc.data().description ? doc.data().description : ""
+        const m = new Module(
+          doc.id,
+          doc.data().name, 
+          description, 
+          doc.data().link,
+          doc.data().gh_page,
+          doc.data().owner, 
+          doc.data().repo_name
+        );
+        modules.push(m)
+      }
+    });
+    
+    res.status(200).send({success: true, message: 'Module added.', checked: checked, modules: modules})
   }
 };
 
@@ -272,11 +320,14 @@ export const getKnowledge = async(req, res, next) => {
     const data = req.body
     const uid = req.body.user
     const userData = await getGithubToken(db, uid)
-    const BEARER_TOKEN = userData?.token
+    
+    let BEARER_TOKEN =  config.devToken
+    if (userData.token) {
+      BEARER_TOKEN = userData.token
+    }
 
     const docRef = db.collection('users').doc(uid)
     const user = await docRef.get();
-    console.log('User', user)
     if (user.exists) {
       try {
         const d = {checked: data.checked}

@@ -18,6 +18,7 @@ import {
 import {
   getUser,
   createUser,
+  createGuest,
   updateChecked,
   updateCount
 } from '../controllers/userController.js'
@@ -43,6 +44,7 @@ router.post('/get_knowledge', getKnowledge)
 router.get('/communities', getCommunities)
 router.get('/getUser', getUser)
 router.post('/createUser', createUser)
+router.post('/createGuest', createGuest)
 router.post('/updateUser', updateChecked)
 router.post('/updateCount', updateCount)
 router.post('/queryGPT', queryGPT)

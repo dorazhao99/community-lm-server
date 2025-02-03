@@ -17,7 +17,8 @@ const {
   GITHUB_CLIENT, 
   GITHUB_SECRET,
   TESTING_UID,
-  OPENAI
+  OPENAI_KEY,
+  DEVELOPER_TOKEN
 } = process.env;
 
 assert(PORT, 'Port is required');
@@ -39,5 +40,6 @@ export default {
   gh_client: GITHUB_CLIENT, 
   gh_secret: GITHUB_SECRET,
   testing_uid: TESTING_UID,
-  openai: OPENAI
+  openai: OPENAI_KEY,
+  devToken: DEVELOPER_TOKEN
 };

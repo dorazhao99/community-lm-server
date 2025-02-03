@@ -75,6 +75,33 @@ export const createUser = async (req, res, next) => {
     }
 }
 
+export const createGuest = async (req, res, next) => {
+    // check auth token here
+    const data = req.body
+    const token = req.headers.authorization
+    console.log('Create guest')
+    if (data.uid) {
+        const docRef = db.collection('users').doc(data.uid)
+        const user = await docRef.get();
+        if (!user.exists) {
+            const d = {
+                modules: ['Owpgm2DXhp0a0dnM1gZa'],
+                numMessages: 0,
+                checked: {}
+            }
+            try {
+                await db.collection('users').doc(data.uid).set(d);
+                const result = { uid: data.uid, signedIn: true }
+                console.log('Document successfully created!');
+                res.status(200).send({'success': true, 'res': result})
+            } catch (error) {
+                console.error('Error creating document:', error);
+                res.status(200).send({'success': false, 'err': error})
+            }
+        }
+    }
+}
+
 export const updateChecked= async (req, res, next) => {
     const data = req.body
     const docRef = db.collection('users').doc(data.uid)
