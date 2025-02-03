@@ -146,7 +146,7 @@ export const getUserModulesOld = async (req, res, next) => {
 };
 
 export const getModule = async (req, res, next) => {
-  const uid = req.body.user
+  const uid = req.query.user
   const userData = await getGithubToken(db, uid)
   
   let BEARER_TOKEN =  config.devToken
@@ -169,6 +169,7 @@ export const getModule = async (req, res, next) => {
         }
     })
     .then(response => {
+      console
       if (response.status === 200) {
         res.status(200).send({'success': true, data: d.data()})
       } else (
