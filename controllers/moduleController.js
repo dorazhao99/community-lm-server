@@ -103,6 +103,48 @@ export const getUserModules = async (req, res, next) => {
   }
 };
 
+export const getUserModulesOld = async (req, res, next) => {
+  try {
+    console.log('Params', req.query)
+    const uid = req.query.user
+
+    const docRef = db.collection('users').doc(uid)
+    const user = await docRef.get();
+    const savedModules = user.data().modules; 
+    const checked = user.data().checked;
+    console.log(user.data())
+    const modulesRef = db.collection('modules');
+    // const q = query(collection(db, 'modules'), where(documentId(), 'in', savedModules));
+  
+    const modules = []
+    const modulePromises = savedModules.map(mod => modulesRef.doc(mod).get());
+    const moduleSnaps = await Promise.all(modulePromises);
+
+    moduleSnaps.forEach((doc) => {
+      console.log('Doc', doc.data())
+      if (doc.data()) {
+        const description = doc.data().description ? doc.data().description : ""
+        const m = new Module(
+          doc.id,
+          doc.data().name, 
+          description, 
+          doc.data().link,
+          doc.data().gh_page,
+          doc.data().owner, 
+          doc.data().repo_name
+        );
+        modules.push(m)
+      }
+    });
+  
+   res.status(200).send(modules);
+    
+  } catch (error) {
+    console.error(error)
+    res.status(400).send(error.message);
+  }
+};
+
 export const getModule = async (req, res, next) => {
   const uid = req.body.user
   const userData = await getGithubToken(db, uid)

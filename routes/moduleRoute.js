@@ -4,6 +4,7 @@ import {
   getModules,
   getGalleryModules,
   getUserModules,
+  getUserModulesOld,
   getModule,
   addModule,
   selectModule, 
@@ -35,7 +36,8 @@ const router = express.Router();
 
 router.get('/', getModules);
 router.get('/exploreModules', getGalleryModules);
-router.get('/userModule', getUserModules);
+router.get('/userModule', getUserModulesOld);
+router.get('/userModule_v2', getUserModules);
 router.get('/module', getModule)
 router.post('/addModule', addModule)
 router.post('/selectModule', selectModule)
