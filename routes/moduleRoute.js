@@ -9,7 +9,8 @@ import {
   addModule,
   selectModule, 
   readFiles,
-  getKnowledge
+  getKnowledge,
+  deleteModule
 } from '../controllers/moduleController.js';
 
 import {
@@ -41,6 +42,7 @@ router.get('/userModule_v2', getUserModules);
 router.get('/module', getModule)
 router.post('/addModule', addModule)
 router.post('/selectModule', selectModule)
+router.post('/removeModule', deleteModule)
 router.post('/fetch', readFiles)
 router.post('/get_knowledge', getKnowledge)
 router.get('/communities', getCommunities)

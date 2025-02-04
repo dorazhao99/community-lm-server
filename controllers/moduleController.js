@@ -79,7 +79,6 @@ export const getUserModules = async (req, res, next) => {
     const moduleSnaps = await Promise.all(modulePromises);
 
     moduleSnaps.forEach((doc) => {
-      console.log('Doc', doc.data())
       if (doc.data()) {
         const description = doc.data().description ? doc.data().description : ""
         const m = new Module(
@@ -121,7 +120,6 @@ export const getUserModulesOld = async (req, res, next) => {
     const moduleSnaps = await Promise.all(modulePromises);
 
     moduleSnaps.forEach((doc) => {
-      console.log('Doc', doc.data())
       if (doc.data()) {
         const description = doc.data().description ? doc.data().description : ""
         const m = new Module(
@@ -266,6 +264,41 @@ export const addModule = async (req, res, next) => {
   }
 };
 
+export const deleteModule = async (req, res, next) => {
+  const body = req.body;
+  const uid = body.uid
+  if (!body.module) {
+    res.status(400).send({error: 'Module not sent'})
+  } else {
+    const userRef = db.collection('users').doc(uid)
+    const user= await userRef.get()
+    if (!user.exists) {
+      res.status(400).send({error: 'User does not exist'})
+    }  
+
+    const module = req.body.module
+    const userData = user.data()
+    const modules = userData.modules
+    let checked = {...userData.checked}
+    let newModules;
+    if (modules.includes(module)) {
+      newModules = modules.filter((m) => m !== module);
+      if (checked.module) {
+        checked[module] = false
+      }
+    } else {
+      newModules = modules
+    }
+
+    userRef.update({modules: newModules, checked: checked})
+    .then(response => {
+      res.status(200).send({success: true, message: "Module deleted", modules: newModules, checked: checked})
+    })
+    .catch(error => {
+      res.status(200).send({success: false, message: error})
+    })
+  }
+}
 
 export const selectModule = async (req, res, next) => {
   // check auth token here
@@ -303,7 +336,6 @@ export const selectModule = async (req, res, next) => {
     const moduleSnaps = await Promise.all(modulePromises);
 
     moduleSnaps.forEach((doc) => {
-      console.log('Doc', doc.data())
       if (doc.data()) {
         const description = doc.data().description ? doc.data().description : ""
         const m = new Module(
@@ -325,7 +357,6 @@ export const selectModule = async (req, res, next) => {
 
 export const readFiles = async(req, res, next) => {
     const data = req.body
-    console.log('data', data)
 
     // Get Github API token 
     const uid = data.uid
@@ -410,7 +441,6 @@ export const getKnowledge = async(req, res, next) => {
               updatedKnowledge[info[index].uid] = {knowledge: response.data, link: info[index].link, name: info[index].name}
             }
         });
-        console.log('Updated knowledge', updatedKnowledge)
         res.status(200).send(updatedKnowledge);
     }))
   } catch(error) {
