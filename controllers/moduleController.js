@@ -198,69 +198,76 @@ export const addModule = async (req, res, next) => {
 
 
   // STEP 1: Check if user has access
-  const link = body.llmLink;
-  const repoInfo = checkRepo(link); 
-  console.log('Repo Info', repoInfo, `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`)
-  const response = await axios.get(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`, {
-    headers: {
-        'Accept': 'application/vnd.github.raw+json',
-        'Authorization': `Bearer ${userData.token}`
-      }
-  })
-
-  if (response.status === 200) {
-    // STEP 2: Check if module is added to database
-    const modulesRef = db.collection("modules");
-    const querySnapshot = await modulesRef.where("gh_page", "==", link).get();
-    let id = ""
-
-    if (querySnapshot.empty && response.data) {
-        // STEP 2b: Add module
-        let data = response.data
-        let info = interpretMarkdown(data)
-        console.log('Info', info)
-        if (!info.name) {
-          res.status(200).send({success: false, message: "Module is missing name in Markdown."})
-        } else {
-          const newModule = {
-            gh_page: body.llmLink, 
-            link: repoInfo.fileName,
-            owner: repoInfo.owner, 
-            repo_name: repoInfo.repo_name, 
-            name: body.name, 
-            slug: info.slug,
-            description: body?.description
-          };
-          
-          // Add the document
-          await db.collection("modules").add(newModule)
-          .then((docRef) => {
-              id = docRef.id
-              console.log("Document written with ID: ", docRef.id);
-              savedModules.push(docRef.id)
-              userRef.update({modules: savedModules}).then(() => {
-                res.status(200).send({success: true, message: 'Module added.', id: docRef.idsuccess})
-              })
-          })
-          .catch((error) => {
-            console.error("Error adding document: ", error);
-          });
+  try {
+    const link = body.llmLink;
+    const repoInfo = checkRepo(link); 
+    console.log('Repo Info', repoInfo, `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`)
+    const response = await axios.get(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`, {
+      headers: {
+          'Accept': 'application/vnd.github.raw+json',
+          'Authorization': `Bearer ${userData.token}`
         }
-    } else {
-      const moduleId = querySnapshot.docs[0].id
-      const isFound = checkUIDExists(savedModules, moduleId)
-      if (!isFound) {
-        savedModules.push(querySnapshot.docs[0].id)
-        await userRef.update({modules: savedModules})
-        res.status(200).send({success: true, message: 'Module added.', id: moduleId})
+    })
+
+    if (response.status === 200) {
+      // STEP 2: Check if module is added to database
+      const modulesRef = db.collection("modules");
+      const querySnapshot = await modulesRef.where("gh_page", "==", link).get();
+      let id = ""
+
+      if (querySnapshot.empty && response.data) {
+          // STEP 2b: Add module
+          let data = response.data
+          let info = interpretMarkdown(data)
+          console.log('Info', info)
+          if (!info) {
+            res.status(200).send({success: false, message: "Repo formatted incorrectly."})
+          } else if (!info.name) {
+            res.status(200).send({success: false, message: "Module is missing name in Markdown."})
+          } else {
+            const newModule = {
+              gh_page: body.llmLink, 
+              link: repoInfo.fileName,
+              owner: repoInfo.owner, 
+              repo_name: repoInfo.repo_name, 
+              name: body.name, 
+              slug: info.slug,
+              description: body?.description
+            };
+            
+            // Add the document
+            await db.collection("modules").add(newModule)
+            .then((docRef) => {
+                id = docRef.id
+                console.log("Document written with ID: ", docRef.id);
+                savedModules.push(docRef.id)
+                userRef.update({modules: savedModules}).then(() => {
+                  res.status(200).send({success: true, message: 'Module added.', id: docRef.idsuccess})
+                })
+            })
+            .catch((error) => {
+              console.error("Error adding document: ", error);
+            });
+          }
       } else {
-        res.status(200).send({success: false, message: 'Module already added.'})
-      }
-    } 
-  } else if (response.status === 403) {
-    res.status(200).send({success: false, message: 'You do not have access to this module.'})
-  } else {
-    res.status(200).send({success: false, message: 'There was an issue adding the module.'})
+        const moduleId = querySnapshot.docs[0].id
+        const isFound = checkUIDExists(savedModules, moduleId)
+        if (!isFound) {
+          savedModules.push(querySnapshot.docs[0].id)
+          await userRef.update({modules: savedModules})
+          res.status(200).send({success: true, message: 'Module added.', id: moduleId})
+        } else {
+          res.status(200).send({success: false, message: 'Module already added.'})
+        }
+      } 
+    } else if (response.status === 403) {
+      res.status(200).send({success: false, message: 'You do not have access to this module.'})
+    } else {
+      res.status(200).send({success: false, message: 'There was an issue adding the module.'})
+    }
+  }
+  catch(error) {
+    res.status(200).send({success: false, message: error})
   }
 };
 

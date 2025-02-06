@@ -72,11 +72,18 @@ export function checkRepo(repo) {
     const result = updatedLink.split("/");
     const owner = result[0]
     const repoName = result[1]
-    const fileName = result[result.length-1]
-    return {
-        owner: owner, 
-        repo_name: repoName,
-        fileName: fileName
+    
+    const blobIndex = result.indexOf("blob")
+    if (blobIndex !== -1) {
+        const branch = result[blobIndex + 1]
+        const fileName = result.slice(blobIndex + 2, result.length)
+        return {
+            owner: owner, 
+            repo_name: repoName,
+            fileName: fileName.join('/')
+        }
+    } else {
+        return null
     }
 }
 
