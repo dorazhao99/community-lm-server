@@ -232,7 +232,8 @@ export const addModule = async (req, res, next) => {
               repo_name: repoInfo.repo_name, 
               name: body.name, 
               slug: info.slug,
-              description: body?.description
+              description: body?.description,
+              isGallery: true
             };
             
             // Add the document
@@ -251,6 +252,8 @@ export const addModule = async (req, res, next) => {
           }
       } else {
         const moduleId = querySnapshot.docs[0].id
+        const moduleRef = db.collection("modules").doc(moduleId)
+        await moduleRef.update({name: body.name, isGallery: true})
         const isFound = checkUIDExists(savedModules, moduleId)
         if (!isFound) {
           savedModules.push(querySnapshot.docs[0].id)
@@ -267,6 +270,7 @@ export const addModule = async (req, res, next) => {
     }
   }
   catch(error) {
+    console.log(error)
     res.status(200).send({success: false, message: error})
   }
 };
