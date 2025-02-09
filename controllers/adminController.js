@@ -1,0 +1,73 @@
+import { db } from '../firebase.js';
+
+const newUsers = [
+    "P815MKeL6ghTrQzlsRRV6koSUd93",
+    "hRNZfNVFCybQcbDOdgLCbBu1C9V2",
+    "FTXWqLC9EshF30jAE6sbvdIPHku1",
+    "YsvkFT8Gr5O32SUlseVOyMw5DRv1",
+    "W5eQoSTmglTf8kTINxZioAa5rhs1",
+    "gfV1bfhMcNO8IhliFvKt8YrhT203",
+    "ypWjSYCvLTNuvvNWsTZB6ydwsI82",
+    "Ixs8CQJ9qJTe0wvcHI2i32hu1wT2", 
+    "R9TKMDVskNdQhVNW9LOXNcy4cqz1", 
+    "HyhBMBlcWPRQ5YHD2QdbHye1U0t2",
+    "th0XhYftU9f9NW0jDIN9S5bXKW82",
+    "oW43f6YmNhdNCHe8mWLyC0HyPn73", 
+    "ta6kBpbembWXdPyPgHXYDVNlXHl2",
+    "RrbAafCCANeXegapxCBIaTEjIfA3", 
+    "W8HB2frjanZ6PnvbSRzRLE5bcV02", 
+    "2mkR44Dt6gUSrlpeWYq26w1viw13",
+    "uUrHWORY1oYBZtO4gMgGMBomTwX2",
+    "Z6ccWoAXJSZlJdRRWWsLHsTdzk72",
+    "CGEIk460vyfPJogOf2MhSfOWlSm2",
+    "Thd09TOcsbXrmzOsjIu3g4PMS513",
+    "0CSy6aIQHWXWkqjIDVeH0ffvEO22", 
+    "YhbFIztAoCM4hQRUzmeODEgqnBx2"
+]
+
+export const getMessage = async(req, res, next) => {
+    const docRef = db.collection('messages')
+    const allDocs = []
+    const results = await docRef.where("uid", "in", newUsers).get()
+    const allMessages = {}
+    results.forEach((doc) => {
+        const modules = doc.data().modules
+        const changedModule = []
+        modules.forEach(module => {
+            if (module !== null) {
+                if (module.knowledge) {
+                    changedModule.push(module.name)
+                } else {
+                    changedModule.push(module)
+                }
+            }
+        })
+        if (doc.data().uid in allMessages) {
+            allMessages[doc.data().uid] += 1
+        } else {
+            allMessages[doc.data().uid] = 1
+        }
+        allDocs.push({
+            'id': doc.id, 
+            'modules': changedModule,
+            'uid': doc.data().uid
+        })
+    })
+    let count = 0 
+    const uid2activated = {}
+   
+    allDocs.forEach(doc => {
+        if (doc.modules.length > 0) {
+            count += 1
+            if (doc.uid in uid2activated) {
+                uid2activated[doc.uid] += 1
+            } else {
+                uid2activated[doc.uid] = 1
+            }
+        }
+    })
+    console.log(allMessages)
+    console.log(uid2activated)
+    console.log(newUsers.length, allDocs.length, count)
+    res.status(200).send(allDocs)
+}
