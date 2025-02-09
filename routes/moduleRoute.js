@@ -30,8 +30,12 @@ import {
 } from '../controllers/gptController.js';
 
 import {
-  storeMessage
+  storeMessage,
 } from '../controllers/messageController.js';
+
+// import {
+//   getMessage
+// } from '../controllers/adminController.js'
 
 const router = express.Router();
 
@@ -47,6 +51,7 @@ router.post('/fetch', readFiles)
 router.post('/get_knowledge', getKnowledge)
 router.get('/communities', getCommunities)
 router.get('/getUser', getUser)
+// router.get('/getMessage', getMessage)
 router.post('/createUser', createUser)
 router.post('/createGuest', createGuest)
 router.post('/updateUser', updateChecked)
