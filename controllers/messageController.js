@@ -30,8 +30,14 @@ export const storeMessage = async (req, res, next) => {
                 }
             })
         }
-
-        const message = data.message ? data.message : ""
+        let message; 
+        try {
+            message = (data.message && savedModules.length > 0) ? data.message : ""
+        } 
+        catch {
+            message = ""
+        }
+        
         const d = {
             message: message,
             conversationId: data.conversationId,
@@ -44,14 +50,13 @@ export const storeMessage = async (req, res, next) => {
 
         try {
             await db.collection('messages').doc(data.messageId).set(d);
-                console.log('Document successfully created!');
-                res.status(200).send({'success': true})
+            console.log('Document successfully created!');
+            res.status(200).send({'success': true})
         }
         catch (error) {
             console.error('Error creating document:', error);
             res.status(200).send({'success': false, 'err': error})
         }
-        res.status(200).send({'success': true})
     } else {
         console.error('Missing fields');
         res.status(200).send({'success': false})
