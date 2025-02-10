@@ -22,7 +22,12 @@ const newUsers = [
     "CGEIk460vyfPJogOf2MhSfOWlSm2",
     "Thd09TOcsbXrmzOsjIu3g4PMS513",
     "0CSy6aIQHWXWkqjIDVeH0ffvEO22", 
-    "YhbFIztAoCM4hQRUzmeODEgqnBx2"
+    "YhbFIztAoCM4hQRUzmeODEgqnBx2",
+    "rEtQx01UW8Mpe2fmxtVtVINiFF73",
+    "QXBunO06OUSNI0fWpgFzWLyg8PE2",
+    "a847rohAFqVrftL0Sr9Ht2UREKX2",
+    "9RcnYRIw3HSL4j9VPJMFHdSGvdD3",
+    "naIi5WcTqYVpy9dFgHwXlclO4FA2"
 ]
 
 export const getMessage = async(req, res, next) => {

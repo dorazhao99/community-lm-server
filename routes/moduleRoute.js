@@ -14,7 +14,9 @@ import {
 } from '../controllers/moduleController.js';
 
 import {
-  getCommunities
+  getCommunities,
+  getCommunity,
+  selectCommunity
 } from '../controllers/communityController.js'
 
 import {
@@ -50,8 +52,10 @@ router.post('/removeModule', deleteModule)
 router.post('/fetch', readFiles)
 router.post('/get_knowledge', getKnowledge)
 router.get('/communities', getCommunities)
+router.get('/getCommunity', getCommunity)
+router.post('/selectCommunity', selectCommunity)
 router.get('/getUser', getUser)
-router.get('/admin/getMessage', getMessage)
+// router.get('/admin/getMessage', getMessage)
 router.post('/createUser', createUser)
 router.post('/createGuest', createGuest)
 router.post('/updateUser', updateChecked)
