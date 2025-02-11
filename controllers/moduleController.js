@@ -243,7 +243,7 @@ export const addModule = async (req, res, next) => {
                 console.log("Document written with ID: ", docRef.id);
                 savedModules.push(docRef.id)
                 userRef.update({modules: savedModules}).then(() => {
-                  res.status(200).send({success: true, message: 'Module added.', id: docRef.idsuccess})
+                  res.status(200).send({success: true, message: 'Module added.', id: docRef.id})
                 })
             })
             .catch((error) => {
