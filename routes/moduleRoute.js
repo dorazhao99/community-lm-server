@@ -10,7 +10,8 @@ import {
   selectModule, 
   readFiles,
   getKnowledge,
-  deleteModule
+  deleteModule,
+  getStarterPacks
 } from '../controllers/moduleController.js';
 
 import {
@@ -55,13 +56,14 @@ router.get('/communities', getCommunities)
 router.get('/getCommunity', getCommunity)
 router.post('/selectCommunity', selectCommunity)
 router.get('/getUser', getUser)
-// router.get('/admin/getMessage', getMessage)
+router.get('/admin/getMessage', getMessage)
 router.post('/createUser', createUser)
 router.post('/createGuest', createGuest)
 router.post('/updateUser', updateChecked)
 router.post('/updateCount', updateCount)
 router.post('/queryGPT', queryGPT)
 router.post('/storeMessage', storeMessage)
+router.get('/getStarter', getStarterPacks)
 
 
 export default router;

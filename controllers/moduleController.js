@@ -462,7 +462,6 @@ export const getKnowledge = async(req, res, next) => {
 }
 
 export const getStarterPacks = async (req, res, next) => {
-  let BEARER_TOKEN =  config.devToken
   const allModuleRef = db.collection('all_modules').doc(req.query.id)
   const d = await allModuleRef.get();
   
@@ -471,18 +470,29 @@ export const getStarterPacks = async (req, res, next) => {
   } else {
     const starterData = d.data()
     const moduleRefs = starterData.modules;
-    const modulePromises = moduleRefs.map(ref => ref.get());
+    const modulePromises = moduleRefs.map(ref => ref.module.get());
     const moduleSnaps = await Promise.all(modulePromises);
 
-    const modules = moduleSnaps.map(moduleSnap => ({
-        id: moduleSnap.id,
-        ...moduleSnap.data()
-    }));
+    let returnInfo = {'modules': {}}
+    moduleSnaps.forEach((moduleSnap, idx) => {
+      const module = moduleSnap.data()
+      console.log(idx, module, moduleRefs)
+      const sectionName = moduleRefs[idx].section
+      if (!(sectionName in returnInfo['modules'])) {
+        returnInfo['modules'][sectionName] = []
+      } 
+      const data = {
+        id: moduleSnap.id, 
+        ...module
+      }
+      returnInfo['modules'][sectionName].push(data)
+    });
     
-    const returnInfo = []
-    modules.forEach(mod =>{
-        returnInfo.push({id: mod.id, ...mod})
-    })
+    // modules.forEach(mod =>{
+    //     returnInfo.push({id: mod.id, ...mod})
+    // })
+    returnInfo['title'] = starterData.title 
+    returnInfo['description'] = starterData.description
     res.status(200).send({'success': true, data: returnInfo})
     // let isPrivate = false
     // axios.all(requests)
