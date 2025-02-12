@@ -460,3 +460,51 @@ export const getKnowledge = async(req, res, next) => {
   }
   
 }
+
+export const getStarterPacks = async (req, res, next) => {
+  let BEARER_TOKEN =  config.devToken
+  const allModuleRef = db.collection('all_modules').doc(req.query.id)
+  const d = await allModuleRef.get();
+  
+  if (!d.exists) {
+    res.status(200).send({'success': false, 'error': 'Sorry, this pack no longer exists.'})
+  } else {
+    const starterData = d.data()
+    const moduleRefs = starterData.modules;
+    const modulePromises = moduleRefs.map(ref => ref.get());
+    const moduleSnaps = await Promise.all(modulePromises);
+
+    const modules = moduleSnaps.map(moduleSnap => ({
+        id: moduleSnap.id,
+        ...moduleSnap.data()
+    }));
+    
+    const returnInfo = []
+    modules.forEach(mod =>{
+        returnInfo.push({id: mod.id, ...mod})
+    })
+    res.status(200).send({'success': true, data: returnInfo})
+    // let isPrivate = false
+    // axios.all(requests)
+    // .then(data => {
+    //     data.forEach(response => {
+    //         if (response.status != 200) {
+    //             isPrivate = true
+    //         }
+    //     })
+    //     starterData['moduleIds'] = moduleIds
+    //     console.log(starterData)
+    //     if (isPrivate) {
+    //         res.status(200).send({'success': false, 'error': 'This is a private module. Only users who have authenticated via Github and have access to the module can access this information.'})
+    //     } else {
+    //         res.status(200).send({'success': true, data: starterData})
+    //     }
+    // })
+    // .catch(
+    //     error => {
+    //         console.log(error)
+    //         res.status(200).send({'success': false, 'error': 'Module was not found. Please try again later.'})
+    //     }
+    // )
+  }
+}
