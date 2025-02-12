@@ -36,7 +36,8 @@ const newUsers = {
         "sM75P6rYI2a2YLB8Xg77N8Lhfv23",
         "GvmLkrdGdlMSShnu8WAbG7dqrPp1",
         "oPC1sqfW3Ca3rzoFBdkCxVbBlG92",
-        "j7wQG3mAM6MIOE2p406zrhZwKpn1"
+        "j7wQG3mAM6MIOE2p406zrhZwKpn1",
+        "SL70ranCHIhD1Y7cG6qjFeu4ays2"
     ],
 }
 
