@@ -40,6 +40,10 @@ import {
   getMessage
 } from '../controllers/adminController.js'
 
+import {
+  createSurvey
+} from '../controllers/surveyController.js'
+
 const router = express.Router();
 
 router.get('/', getModules);
@@ -56,7 +60,7 @@ router.get('/communities', getCommunities)
 router.get('/getCommunity', getCommunity)
 router.post('/selectCommunity', selectCommunity)
 router.get('/getUser', getUser)
-router.get('/admin/getMessage', getMessage)
+// router.get('/admin/getMessage', getMessage)
 router.post('/createUser', createUser)
 router.post('/createGuest', createGuest)
 router.post('/updateUser', updateChecked)
@@ -64,6 +68,7 @@ router.post('/updateCount', updateCount)
 router.post('/queryGPT', queryGPT)
 router.post('/storeMessage', storeMessage)
 router.get('/getStarter', getStarterPacks)
+router.post('/submitSurvey', createSurvey)
 
 
 export default router;
