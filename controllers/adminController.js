@@ -1,5 +1,5 @@
 import { db } from '../firebase.js';
-
+import { documentId} from "firebase/firestore";
 const newUsers = {
     0: [
         "P815MKeL6ghTrQzlsRRV6koSUd93",
@@ -48,8 +48,19 @@ export const getMessage = async(req, res, next) => {
     const idx = req.query.idx
     const moduleOnly = req.query.mo == '1' ? true : false
     const docRef = db.collection('messages')
+    const userRef = db.collection('users')
     const allDocs = []
     const results = await docRef.where("uid", "in", newUsers[idx]).get()
+    // const userResults = await userRef.where("uid", "in", newUsers[idx]).get()
+    // const userRef = query(db.collection('users'), where(documentId(), 'in', newUsers[idx]));
+    const userResults = await userRef.where("__name__", 'in', newUsers[idx]).get()
+
+    const users = {}
+    userResults.forEach(user => {
+
+        users[user.id] = user.data().checked
+    })
+
     const allMessages = {}
     results.forEach((doc) => {
         const modules = doc.data().modules
@@ -69,12 +80,14 @@ export const getMessage = async(req, res, next) => {
             allMessages[doc.data().uid] = 1
         }
         if (moduleOnly && changedModule.length > 0) {
+            const uid = doc.data().uid
             allDocs.push({
                 'id': doc.id, 
                 'conversationId': doc.data().conversationId,
                 'message': doc.data().message,
                 'modules': changedModule,
-                'uid': doc.data().uid
+                'uid': uid,
+                'checked': users[uid]
             })
         } else if (!moduleOnly) {
             allDocs.push({
@@ -104,3 +117,59 @@ export const getMessage = async(req, res, next) => {
     console.log(newUsers[idx].length, allDocs.length, count)
     res.status(200).send(allDocs)
 }
+
+
+// export const getMessage = async(req, res, next) => {
+//     const docRef = db.collection('messages')
+//     const userRef = db.collection('users')
+//     const allDocs = []
+//     const results = await docRef.where("uid", "in", newUsers).get()
+//     const userResults = await userRef.where("uid", "in", newUsers).get()
+//     const users = {}
+//     userResults.forEach(user => {
+//         users[user.id] = user.data().checked
+//     })
+//     const allMessages = {}
+//     results.forEach((doc) => {
+//         const modules = doc.data().modules
+//         const uid = doc.data().uid
+//         const changedModule = []
+//         modules.forEach(module => {
+//             if (module !== null) {
+//                 if (module.knowledge) {
+//                     changedModule.push(module.name)
+//                 } else {
+//                     changedModule.push(module)
+//                 }
+//             }
+//         })
+//         if (doc.data().uid in allMessages) {
+//             allMessages[doc.data().uid] += 1
+//         } else {
+//             allMessages[doc.data().uid] = 1
+//         }
+//         allDocs.push({
+//             'id': doc.id, 
+//             'modules': changedModule,
+//             'uid': doc.data().uid,
+//             'checked': users[uid]
+//         })
+//     })
+//     let count = 0 
+//     const uid2activated = {}
+   
+//     allDocs.forEach(doc => {
+//         if (doc.modules.length > 0) {
+//             count += 1
+//             if (doc.uid in uid2activated) {
+//                 uid2activated[doc.uid] += 1
+//             } else {
+//                 uid2activated[doc.uid] = 1
+//             }
+//         }
+//     })
+//     console.log(allMessages)
+//     console.log(uid2activated)
+//     console.log(newUsers.length, allDocs.length, count)
+//     res.status(200).send(allDocs)
+// }

@@ -39,6 +39,10 @@ import {
   getMessage
 } from '../controllers/adminController.js'
 
+import {
+  createSurvey
+} from '../controllers/surveyController.js'
+
 const router = express.Router();
 
 router.get('/', getModules);
@@ -62,6 +66,7 @@ router.post('/updateUser', updateChecked)
 router.post('/updateCount', updateCount)
 router.post('/queryGPT', queryGPT)
 router.post('/storeMessage', storeMessage)
+router.post('/submitSurvey', createSurvey)
 
 
 export default router;
