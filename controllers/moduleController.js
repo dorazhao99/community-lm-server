@@ -233,7 +233,7 @@ export const addModule = async (req, res, next) => {
               name: body.name, 
               slug: info.slug,
               description: body?.description,
-              isGallery: true
+              isGallery: body.isGallery ? body.isGallery : false
             };
             
             // Add the document
