@@ -40,8 +40,37 @@ const newUsers = {
         "SL70ranCHIhD1Y7cG6qjFeu4ays2",
         "cG4lk6ZtUwTiX4j4opvuZleR1dp2",
         "GjAZv6SsMVM2SEKVxJGdii8o4MS2",
-        "xnGYtdP91sT4px04qCN1xqCOt3P2"
+        "xnGYtdP91sT4px04qCN1xqCOt3P2",
+        "mpvgs3731PQ7K753xyRfV86QxSn2",
+        "bJxnvmuoIHRa09DaNDB8cx42kDJ3",
+        "QqsvyCnFU8aMuykyegvYhRwjp3E3",
+        "WbJv2gYgYyad3A2mzgCUEN3As5A3",
+        "RqbH39IR8uOnasHTTUB2etv89bc2",
+        "RcENLJxFKjUMC4WMwciSWrBcnhx1",
+        "mRAENJNnslZ5LfZWy5VJV18r41v1",
+        "cDI4BkplKCgLyqtnmPy3lTPbDmt1",
+        "ao0hsz88EjdyzOtY83c8gdubvCN2",
+        "2hrJA8Aoadg4tB4r6aUyP3N7b352",
+        "OM3Erx0bWec5d2vFM6uURciZW392",
+        "EkRZ00VFbhP37nFLwgLWwRBpVcn1"
     ],
+    2: [
+        "BrpOOkBoJObwysa28i4TV56PIvm2",
+        "oa1muxW74xZi9UvgJeFaPHww3XF3",
+        "y8QEiLjd7yTY9BK62hb39SOe2DS2",
+        "lp1IDyR6syV04FqyxgiyL3Hm0f43",
+        "Mx7C4NuzGjgX1bzjlByDeyGyrtg2",
+        "mwxwdQrpTtXXWru40qbCGoORamJ2",
+        "it4pN0Z7jeSHkYoBD4SsfRDfT1K3",
+        "Qx4dF9YfHhUEEKGEL0Yd0WOQnQt1",
+        "GodQp8ZQpJaHvp13EvaWppO1Mtx2",
+        "ue4UKe6wECcgIULjYDE9MPjTRBL2",
+        "khd6yjwvzkQ4s4UV6ypmgST22k53",
+        "ssPSz2wM2MZUzMy7VXyODH4zAyl2",
+        "CXIa2iZMjagnhCIWgQWksPvPfEe2",
+        "sGtNzSQOkydg0T20YSrVN4QrEZC3",
+        "d4lVYEvVYaSEiA7YDXkq4ucb9Dp1"
+    ]
 }
 
 export const getMessage = async(req, res, next) => {
