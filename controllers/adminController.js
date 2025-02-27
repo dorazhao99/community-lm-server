@@ -69,7 +69,18 @@ const newUsers = {
         "ssPSz2wM2MZUzMy7VXyODH4zAyl2",
         "CXIa2iZMjagnhCIWgQWksPvPfEe2",
         "sGtNzSQOkydg0T20YSrVN4QrEZC3",
-        "d4lVYEvVYaSEiA7YDXkq4ucb9Dp1"
+        "d4lVYEvVYaSEiA7YDXkq4ucb9Dp1",
+        "RsXdXCwS5BeyC4TwtEvCVoVRp0j2",
+        "9pEs1gMCaIhgcvfWtgrGwjI4h7u1",
+        "yZqDFRDq0tcmnziC5Su9fX9Qdgj2",
+        "CxJ6e7TRhDfwrAY812QEm6lKsYg2",
+        "rdjodyIAoCdakbOL5VWQl2kVhVA2",
+        "dIZ4POhWnONHJNfZsg6X5YRw4Ch2",
+        "uDfA6jwu1YQS7dWBCK3QuIX73k83",
+        "964mzvVP0vdEPPdO1qrSbqDT72m1",
+        "Kyek1McsRTTUpU7S7Y1SAsUk92r2",
+        "09xj9V5SZsbaD4Nnuxe5207brqx1",
+        "1VMddeOE60QJ5KxNxcG6Ia8adIo2"
     ]
 }
 
@@ -116,7 +127,8 @@ export const getMessage = async(req, res, next) => {
                 'message': doc.data().message,
                 'modules': changedModule,
                 'uid': uid,
-                'checked': users[uid]
+                'checked': users[uid],
+                'time': doc.data().time
             })
         } else if (!moduleOnly) {
             allDocs.push({

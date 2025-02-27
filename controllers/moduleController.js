@@ -1,4 +1,5 @@
 import { firebase, db } from '../firebase.js';
+import { docs, docAuth, client } from '../docs.js'
 import Module from '../models/modulesModel.js';
 import axios from 'axios'; 
 import { getGithubToken, checkRepo, interpretMarkdown, checkUIDExists } from '../utils.js'
@@ -29,7 +30,8 @@ export const getModules = async (req, res, next) => {
           doc.data().gh_page,
           doc.data().owner, 
           doc.data().repo_name,
-          queries
+          queries,
+          doc.data()?.source
         );
         modulesArray.push(m)
       });
@@ -81,15 +83,17 @@ export const getUserModules = async (req, res, next) => {
     moduleSnaps.forEach((doc) => {
       if (doc.data()) {
         const description = doc.data().description ? doc.data().description : ""
-        const m = new Module(
-          doc.id,
-          doc.data().name, 
-          description, 
-          doc.data().link,
-          doc.data().gh_page,
-          doc.data().owner, 
-          doc.data().repo_name
-        );
+        // const m = new Module(
+        //   doc.id,
+        //   doc.data().name, 
+        //   description, 
+        //   doc.data().link,
+        //   doc.data().gh_page,
+        //   doc.data().owner, 
+        //   doc.data().repo_name
+        // );
+        const m = {id: doc.id, ...doc.data()}
+        m.description = description
         modules.push(m)
       }
     });
@@ -400,12 +404,11 @@ export const readFiles = async(req, res, next) => {
 
 export const getKnowledge = async(req, res, next) => {
   try {
-    const requests = []
-    const info = []
     const data = req.body
     const uid = req.body.user
     const userData = await getGithubToken(db, uid)
-    
+
+    let updatedKnowledge = {}
     let BEARER_TOKEN =  config.devToken
     if (userData.token) {
       BEARER_TOKEN = userData.token
@@ -422,14 +425,24 @@ export const getKnowledge = async(req, res, next) => {
       }
     }
 
+    const requests = []
+    const ghInfo = []
+    const googleInfo = []
+    const googleRequests = []
+
     Object.entries(data.checked).forEach((idx) => {
       if (idx[1]) {
           const mod = data.modules.find(item => item.id === idx[0]);
           if (mod) {
             console.log('Mod', mod)
+            if (mod?.source === 'google') {
+              googleRequests.push(docs.documents.get({ auth: client, documentId: mod.documentId}))
+              googleInfo.push({name: mod.name, link: mod.doc_page, uid: idx[0]})
+            } 
+            else {
               const params = {
                   owner: mod.owner,
-                  repo: mod.repo,
+                  repo: mod.repo_name,
                   path: mod.link
               }
               console.log(params, BEARER_TOKEN, `https://api.github.com/repos/${params.owner}/${params.repo}/contents/${params.path}`)
@@ -440,19 +453,51 @@ export const getKnowledge = async(req, res, next) => {
                   }
               }))
               const gh_page = mod.gh_page ? mod.gh_page : ""
-              info.push({uid: idx[0], link: gh_page, name: mod.name})
+              ghInfo.push({uid: idx[0], link: gh_page, name: mod.name})
+            }
           }
       }
     })
-    let updatedKnowledge = {}
+    
     axios.all(requests)
     .then(axios.spread((...responses) => {
         responses.forEach((response, index) => {
             if (response.data) {
-              updatedKnowledge[info[index].uid] = {knowledge: response.data, link: info[index].link, name: info[index].name}
+              updatedKnowledge[ghInfo[index].uid] = {knowledge: response.data, link: ghInfo[index].link, name: ghInfo[index].name}
             }
         });
-        res.status(200).send(updatedKnowledge);
+
+        Promise.all(googleRequests)
+        .then(googleResults => {
+          googleResults.forEach((response, index) => {
+            if (response.data) {
+              const data = response.data
+              const body = data?.body 
+              const knowledge = []
+              if (body) {
+          
+                body?.content.forEach(chunk => {
+                  const paragraph = chunk.paragraph
+                  const style = paragraph?.paragraphStyle
+                  const [addStyle, styledMark] = styleToMark(style)
+                  if (addStyle) {
+                    knowledge.push(styledMark)
+                  }
+                  paragraph?.elements.forEach(element => {
+                    const content = element?.textRun?.content
+                    if (content) {
+                      knowledge.push(removeControlCharacters(content))
+                    }
+                  })
+                })
+                const formattedKnowledge = knowledge.join(" ")
+                updatedKnowledge[googleInfo[index].uid] = {knowledge: formattedKnowledge, link: googleInfo[index].link, name: googleInfo[index].name}
+              }
+            }
+          })
+          console.log(updatedKnowledge)
+          res.status(200).send(updatedKnowledge);
+        })
     }))
   } catch(error) {
     console.log(error)
@@ -516,5 +561,63 @@ export const getStarterPacks = async (req, res, next) => {
     //         res.status(200).send({'success': false, 'error': 'Module was not found. Please try again later.'})
     //     }
     // )
+  }
+}
+
+function styleToMark(style) {
+  const styleName = style?.namedStyleType
+  if (styleName && styleName.includes('HEADING')) {
+    const headingNumber = styleName.split('_').slice(-1)
+    const count = parseInt(headingNumber);
+    if (isNaN(count)) {
+      return [false, null]
+    } 
+    const heading = "#".repeat(count);
+    return [true, heading]
+  } else {
+    return [false, null]
+  }
+}
+
+function removeControlCharacters(str) {
+  if (str) {
+    return str.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+  } else {
+    return str
+  }
+}
+
+export const getGoogleDocs = async (req, res, next) => {
+  
+  const response = await docs.documents.get({
+    auth: client,
+    documentId: '1qGh4OjcsT2BDlr6lds6E4gIKzg_nUTsL6RsF97k6lSw',  // Get this from the document URL
+  });
+
+  const knowledge = []
+  if (response.data) {
+    const data = response.data
+    const body = data?.body 
+    if (body) {
+
+      body?.content.forEach(chunk => {
+        const paragraph = chunk.paragraph
+        const style = paragraph?.paragraphStyle
+        const [addStyle, styledMark] = styleToMark(style)
+        if (addStyle) {
+          knowledge.push(styledMark)
+        }
+        paragraph?.elements.forEach(element => {
+          const content = element?.textRun?.content
+          if (content) {
+            knowledge.push(removeControlCharacters(content))
+          }
+        })
+      })
+      const updatedKnowledge = knowledge.join(" ")
+      res.status(200).send({updatedKnowledge})
+    }
+  } else {
+    res.status(200).send({knowledge})
   }
 }

@@ -11,7 +11,8 @@ import {
   readFiles,
   getKnowledge,
   deleteModule,
-  getStarterPacks
+  getStarterPacks,
+  getGoogleDocs
 } from '../controllers/moduleController.js';
 
 import {
@@ -47,6 +48,7 @@ import {
 const router = express.Router();
 
 router.get('/', getModules);
+router.get('/getGoogleDocs', getGoogleDocs);
 router.get('/exploreModules', getGalleryModules);
 router.get('/userModule', getUserModulesOld);
 router.get('/userModule_v2', getUserModules);
