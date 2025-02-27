@@ -233,7 +233,7 @@ export const addModule = async (req, res, next) => {
               name: body.name, 
               slug: info.slug,
               description: body?.description,
-              isGallery: true
+              isGallery: body.isGallery ? body.isGallery : false
             };
             
             // Add the document
@@ -243,7 +243,7 @@ export const addModule = async (req, res, next) => {
                 console.log("Document written with ID: ", docRef.id);
                 savedModules.push(docRef.id)
                 userRef.update({modules: savedModules}).then(() => {
-                  res.status(200).send({success: true, message: 'Module added.', id: docRef.idsuccess})
+                  res.status(200).send({success: true, message: 'Module added.', id: docRef.id})
                 })
             })
             .catch((error) => {
@@ -459,4 +459,62 @@ export const getKnowledge = async(req, res, next) => {
     res.status(400).send(error)
   }
   
+}
+
+export const getStarterPacks = async (req, res, next) => {
+  const allModuleRef = db.collection('all_modules').doc(req.query.id)
+  const d = await allModuleRef.get();
+  
+  if (!d.exists) {
+    res.status(200).send({'success': false, 'error': 'Sorry, this pack no longer exists.'})
+  } else {
+    const starterData = d.data()
+    const moduleRefs = starterData.modules;
+    const modulePromises = moduleRefs.map(ref => ref.module.get());
+    const moduleSnaps = await Promise.all(modulePromises);
+
+    let returnInfo = {'modules': {}}
+    moduleSnaps.forEach((moduleSnap, idx) => {
+      const module = moduleSnap.data()
+      console.log(idx, module, moduleRefs)
+      const sectionName = moduleRefs[idx].section
+      if (!(sectionName in returnInfo['modules'])) {
+        returnInfo['modules'][sectionName] = []
+      } 
+      const data = {
+        id: moduleSnap.id, 
+        ...module
+      }
+      returnInfo['modules'][sectionName].push(data)
+    });
+    
+    // modules.forEach(mod =>{
+    //     returnInfo.push({id: mod.id, ...mod})
+    // })
+    returnInfo['title'] = starterData.title 
+    returnInfo['description'] = starterData.description
+    res.status(200).send({'success': true, data: returnInfo})
+    // let isPrivate = false
+    // axios.all(requests)
+    // .then(data => {
+    //     data.forEach(response => {
+    //         if (response.status != 200) {
+    //             isPrivate = true
+    //         }
+    //     })
+    //     starterData['moduleIds'] = moduleIds
+    //     console.log(starterData)
+    //     if (isPrivate) {
+    //         res.status(200).send({'success': false, 'error': 'This is a private module. Only users who have authenticated via Github and have access to the module can access this information.'})
+    //     } else {
+    //         res.status(200).send({'success': true, data: starterData})
+    //     }
+    // })
+    // .catch(
+    //     error => {
+    //         console.log(error)
+    //         res.status(200).send({'success': false, 'error': 'Module was not found. Please try again later.'})
+    //     }
+    // )
+  }
 }
