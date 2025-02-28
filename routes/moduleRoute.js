@@ -37,9 +37,10 @@ import {
   storeMessage,
 } from '../controllers/messageController.js';
 
-import {
-  getMessage
-} from '../controllers/adminController.js'
+// import {
+//   getMessage,
+//   getUsers
+// } from '../controllers/adminController.js'
 
 import {
   createSurvey
@@ -62,7 +63,6 @@ router.get('/communities', getCommunities)
 router.get('/getCommunity', getCommunity)
 router.post('/selectCommunity', selectCommunity)
 router.get('/getUser', getUser)
-// router.get('/admin/getMessage', getMessage)
 router.post('/createUser', createUser)
 router.post('/createGuest', createGuest)
 router.post('/updateUser', updateChecked)
@@ -71,6 +71,9 @@ router.post('/queryGPT', queryGPT)
 router.post('/storeMessage', storeMessage)
 router.get('/getStarter', getStarterPacks)
 router.post('/submitSurvey', createSurvey)
+// router.get('/admin/getMessage', getMessage)
+// router.get('/admin/getUsers', getUsers)
+
 
 
 export default router;

@@ -467,11 +467,11 @@ export const getKnowledge = async(req, res, next) => {
             }
         });
 
-        Promise.all(googleRequests)
+        Promise.allSettled(googleRequests)
         .then(googleResults => {
           googleResults.forEach((response, index) => {
-            if (response.data) {
-              const data = response.data
+            if (response.status) {
+              const data = response?.value?.data
               const body = data?.body 
               const knowledge = []
               if (body) {
