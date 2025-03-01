@@ -1,5 +1,9 @@
 import { db } from '../firebase.js';
 import { documentId} from "firebase/firestore";
+import axios from 'axios';
+import config from '../config.js';
+import { getGithubToken, checkRepo, interpretMarkdown, checkUIDExists } from '../utils.js'
+
 const newUsers = {
     0: [
         "P815MKeL6ghTrQzlsRRV6koSUd93",
@@ -80,7 +84,9 @@ const newUsers = {
         "964mzvVP0vdEPPdO1qrSbqDT72m1",
         "Kyek1McsRTTUpU7S7Y1SAsUk92r2",
         "09xj9V5SZsbaD4Nnuxe5207brqx1",
-        "1VMddeOE60QJ5KxNxcG6Ia8adIo2"
+        "1VMddeOE60QJ5KxNxcG6Ia8adIo2",
+        "fIZvPmUwfwPH9ig4ARWw8DrfJZ73",
+        "rfYescuyLIS3nhQllfqijlEadxK2"
     ]
 }
 
@@ -159,58 +165,217 @@ export const getMessage = async(req, res, next) => {
     res.status(200).send(allDocs)
 }
 
+export const getUsers = async(req, res, next) => {
+    const idx = req.query.idx
+    const userRef = db.collection('users')
+    const userResults = await userRef.where("__name__", 'in', newUsers[idx]).get()
+    const users = {}
+    userResults.forEach(user => {
+        users[user.id] = {
+            checked: user.data().checked, 
+            modules: user.data().modules,
+            numMessages: user.data().numMessages
+        }
+    })
+    console.log(users)
+    res.status(200).send(users)
+}
 
-// export const getMessage = async(req, res, next) => {
-//     const docRef = db.collection('messages')
-//     const userRef = db.collection('users')
-//     const allDocs = []
-//     const results = await docRef.where("uid", "in", newUsers).get()
-//     const userResults = await userRef.where("uid", "in", newUsers).get()
-//     const users = {}
-//     userResults.forEach(user => {
-//         users[user.id] = user.data().checked
-//     })
-//     const allMessages = {}
-//     results.forEach((doc) => {
-//         const modules = doc.data().modules
-//         const uid = doc.data().uid
-//         const changedModule = []
-//         modules.forEach(module => {
-//             if (module !== null) {
-//                 if (module.knowledge) {
-//                     changedModule.push(module.name)
-//                 } else {
-//                     changedModule.push(module)
-//                 }
-//             }
-//         })
-//         if (doc.data().uid in allMessages) {
-//             allMessages[doc.data().uid] += 1
-//         } else {
-//             allMessages[doc.data().uid] = 1
-//         }
-//         allDocs.push({
-//             'id': doc.id, 
-//             'modules': changedModule,
-//             'uid': doc.data().uid,
-//             'checked': users[uid]
-//         })
-//     })
-//     let count = 0 
-//     const uid2activated = {}
-   
-//     allDocs.forEach(doc => {
-//         if (doc.modules.length > 0) {
-//             count += 1
-//             if (doc.uid in uid2activated) {
-//                 uid2activated[doc.uid] += 1
-//             } else {
-//                 uid2activated[doc.uid] = 1
-//             }
-//         }
-//     })
-//     console.log(allMessages)
-//     console.log(uid2activated)
-//     console.log(newUsers.length, allDocs.length, count)
-//     res.status(200).send(allDocs)
-// }
+export const getKnowledge = async(req, res, next) => {
+  try {
+    const data = req.body
+    const uid = req.body.user
+    const userData = await getGithubToken(db, uid)
+
+    let updatedKnowledge = {}
+    let BEARER_TOKEN =  config.devToken
+    if (userData.token) {
+      BEARER_TOKEN = userData.token
+    }
+
+    const docRef = db.collection('users').doc(uid)
+    const user = await docRef.get();
+    if (user.exists) {
+      try {
+        const d = {checked: data.checked}
+        await docRef.update(d)
+      } catch(error) {
+        console.log(error)
+      }
+    }
+
+    const requests = []
+    const ghInfo = []
+    const googleInfo = []
+    const googleRequests = []
+
+    Object.entries(data.checked).forEach((idx) => {
+      if (idx[1]) {
+          const mod = data.modules.find(item => item.id === idx[0]);
+          if (mod) {
+            console.log('Mod', mod)
+            if (mod?.source === 'google') {
+              googleRequests.push(docs.documents.get({ auth: client, documentId: mod.documentId}))
+              googleInfo.push({name: mod.name, link: mod.doc_page, uid: idx[0]})
+            } 
+            else {
+              const params = {
+                  owner: mod.owner,
+                  repo: mod.repo_name,
+                  path: mod.link
+              }
+              console.log(params, BEARER_TOKEN, `https://api.github.com/repos/${params.owner}/${params.repo}/contents/${params.path}`)
+              requests.push(axios.get(`https://api.github.com/repos/${params.owner}/${params.repo}/contents/${params.path}`, {
+                  headers: {
+                      'Accept': 'application/vnd.github.raw+json',
+                      'Authorization': `Bearer ${BEARER_TOKEN}`
+                  }
+              }))
+              const gh_page = mod.gh_page ? mod.gh_page : ""
+              ghInfo.push({uid: idx[0], link: gh_page, name: mod.name})
+            }
+          }
+      }
+    })
+    
+    axios.all(requests)
+    .then(axios.spread((...responses) => {
+        responses.forEach((response, index) => {
+            if (response.data) {
+              updatedKnowledge[ghInfo[index].uid] = {knowledge: response.data, link: ghInfo[index].link, name: ghInfo[index].name}
+            }
+        });
+
+        Promise.allSettled(googleRequests)
+        .then(googleResults => {
+          googleResults.forEach((response, index) => {
+            if (response.status) {
+              const data = response?.value?.data
+              const body = data?.body 
+              const knowledge = []
+              if (body) {
+          
+                body?.content.forEach(chunk => {
+                  const paragraph = chunk.paragraph
+                  const style = paragraph?.paragraphStyle
+                  const [addStyle, styledMark] = styleToMark(style)
+                  if (addStyle) {
+                    knowledge.push(styledMark)
+                  }
+                  paragraph?.elements.forEach(element => {
+                    const content = element?.textRun?.content
+                    if (content) {
+                      knowledge.push(removeControlCharacters(content))
+                    }
+                  })
+                })
+                const formattedKnowledge = knowledge.join(" ")
+                updatedKnowledge[googleInfo[index].uid] = {knowledge: formattedKnowledge, link: googleInfo[index].link, name: googleInfo[index].name}
+              }
+            }
+          })
+          console.log(updatedKnowledge)
+          res.status(200).send(updatedKnowledge);
+        })
+    }))
+  } catch(error) {
+    console.log(error)
+    res.status(400).send(error)
+  }
+  
+}
+
+export const getModuleKnowledge = async(req, res, next) => {
+    try {
+        const moduleId = req.query.modId
+        const uid = req.body.uid
+        const userData = await getGithubToken(db, uid)
+        let BEARER_TOKEN =  config.devToken
+        if (userData.token) {
+            BEARER_TOKEN = userData.token
+        }
+    
+        const moduleRef = db.collection('modules').doc(moduleId)
+        const m = await moduleRef.get();
+        const mod = m.data();
+        console.log(mod)
+        let formattedKnowledge = ""
+        if (mod?.source === 'google') {
+            // google call
+            const response = await docs.documents.get({ auth: client, documentId: mod.documentId})
+            if (response.status) {
+                const data = response?.value?.data
+                const body = data?.body 
+                const knowledge = []
+                if (body) {
+                    body?.content.forEach(chunk => {
+                        const paragraph = chunk.paragraph
+                        const style = paragraph?.paragraphStyle
+                        const [addStyle, styledMark] = styleToMark(style)
+                        if (addStyle) {
+                        knowledge.push(styledMark)
+                        }
+                        paragraph?.elements.forEach(element => {
+                        const content = element?.textRun?.content
+                        if (content) {
+                            knowledge.push(removeControlCharacters(content))
+                        }
+                        })
+                    })
+                    formattedKnowledge = knowledge.join(" ")
+                }
+            }
+        } else {
+            const params = {
+                owner: mod.owner,
+                repo: mod.repo_name,
+                path: mod.link
+            }
+            console.log(params)
+            // axios call
+            const response = await axios.get(`https://api.github.com/repos/${params.owner}/${params.repo}/contents/${params.path}`, {
+                headers: {
+                    'Accept': 'application/vnd.github.raw+json',
+                    'Authorization': `Bearer ${BEARER_TOKEN}`
+                }
+            })
+            if (response.data) {
+                formattedKnowledge = response.data
+            }
+        }
+        res.status(200).send({data: formattedKnowledge})
+    } 
+    catch(error) {
+        console.log(error)
+        res.status(200).send({data: error})
+    }
+}
+
+export const createPairs = async(req, res, next) => {
+     // check auth token here
+     const data = req.body
+     console.log(data)
+     try {
+        if (data.uid) {
+            const docRef = db.collection('users').doc(data.uid)
+            const user = await docRef.get();
+            if (user.exists) {
+                const d = {
+                    preferencePairs: JSON.parse(data.preferencePairs)
+                }
+                console.log(d)
+                await docRef.update(d)
+                res.status(200).send({data: d})
+            } else {
+                console.log('User not found')
+                res.status(400).send({data: 'User not found'})
+            }
+        } else {
+            console.log('User not found')
+            res.status(400).send({data: 'User not found'})
+        }
+    } catch(error) {
+        console.log(error)
+        res.status(400).send({data: error})
+    }
+}

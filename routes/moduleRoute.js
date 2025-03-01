@@ -26,7 +26,8 @@ import {
   createUser,
   createGuest,
   updateChecked,
-  updateCount
+  updateCount,
+  getUserMessages
 } from '../controllers/userController.js'
 
 import {
@@ -37,13 +38,16 @@ import {
   storeMessage,
 } from '../controllers/messageController.js';
 
-// import {
-//   getMessage,
-//   getUsers
-// } from '../controllers/adminController.js'
+import {
+  getMessage,
+  getUsers,
+  getModuleKnowledge,
+  createPairs
+} from '../controllers/adminController.js'
 
 import {
-  createSurvey
+  createSurvey,
+  getPreferencePairs
 } from '../controllers/surveyController.js'
 
 const router = express.Router();
@@ -71,6 +75,11 @@ router.post('/queryGPT', queryGPT)
 router.post('/storeMessage', storeMessage)
 router.get('/getStarter', getStarterPacks)
 router.post('/submitSurvey', createSurvey)
+router.get('/getPreferencePairs', getPreferencePairs)
+router.get('/getMessages', getUserMessages)
+router.get('/admin/getModuleKnowledge', getModuleKnowledge)
+router.post('/admin/createPairs', createPairs)
+
 // router.get('/admin/getMessage', getMessage)
 // router.get('/admin/getUsers', getUsers)
 

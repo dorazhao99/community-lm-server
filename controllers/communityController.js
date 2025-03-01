@@ -140,15 +140,8 @@ export const getCommunity = async (req, res, next) => {
       moduleSnaps.forEach((doc) => {
         if (doc.data()) {
           const description = doc.data().description ? doc.data().description : ""
-          const m = new Module(
-            doc.id,
-            doc.data().name, 
-            description, 
-            doc.data().link,
-            doc.data().gh_page,
-            doc.data().owner, 
-            doc.data().repo_name
-          );
+          const m = {id: doc.id, ...doc.data()}
+          m.description = description
           modules.push(m)
         }
       });

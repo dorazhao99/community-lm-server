@@ -22,21 +22,11 @@ export const getModules = async (req, res, next) => {
       modules.forEach((doc) => {
         const queries = doc.data().queries ? doc.data().queries : []
 
-        const m = new Module(
-          doc.id,
-          doc.data().name, 
-          doc.data().description, 
-          doc.data().link,
-          doc.data().gh_page,
-          doc.data().owner, 
-          doc.data().repo_name,
-          queries,
-          doc.data()?.source
-        );
+        const m = {id: doc.id, queries: queries, ...doc.data()}
         modulesArray.push(m)
       });
       res.status(200).send(modulesArray);
-}
+  }
 };
 
 export const getGalleryModules = async (req, res, next) => {
@@ -48,15 +38,7 @@ export const getGalleryModules = async (req, res, next) => {
     res.status(400).send('No Products found');
   } else {
     modules.forEach((doc) => {
-      const m = new Module(
-        doc.id,
-        doc.data().name, 
-        doc.data().description, 
-        doc.data().link,
-        doc.data().gh_page,
-        doc.data().owner, 
-        doc.data().repo_name
-      );
+      const m = {id: doc.id, ...doc.data()}
       modulesArray.push(m)
     });
     res.status(200).send(modulesArray);
@@ -126,15 +108,8 @@ export const getUserModulesOld = async (req, res, next) => {
     moduleSnaps.forEach((doc) => {
       if (doc.data()) {
         const description = doc.data().description ? doc.data().description : ""
-        const m = new Module(
-          doc.id,
-          doc.data().name, 
-          description, 
-          doc.data().link,
-          doc.data().gh_page,
-          doc.data().owner, 
-          doc.data().repo_name
-        );
+        const m = {id: doc.id, ...doc.data()}
+        m.description = description
         modules.push(m)
       }
     });
@@ -162,25 +137,29 @@ export const getModule = async (req, res, next) => {
   if (!d.exists) {
     res.status(200).send({'success': false, 'error': 'Sorry, this module no longer exists.'})
   } else {
-    const repoInfo = checkRepo(d.data().gh_page); 
+    if (d.data().source && d.data().source === 'google') {
+      res.status(200).send({'success': true, data: d.data()})
+    } else {
+      const repoInfo = checkRepo(d.data().gh_page); 
 
-    axios.get(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`, {
-      headers: {
-          'Accept': 'application/vnd.github.raw+json',
-          'Authorization': `Bearer ${BEARER_TOKEN}`
-        }
-    })
-    .then(response => {
-      console
-      if (response.status === 200) {
-        res.status(200).send({'success': true, data: d.data()})
-      } else (
-        res.status(200).send({'success': false, 'error': 'Module was not found. Please try again later.'})
-      )
-    })
-    .catch(error => {
-      res.status(200).send({'success': false, 'error': 'This is a private module. Only users who have authenticated via Github and have access to the module can access this information.'})
-    })
+      axios.get(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`, {
+        headers: {
+            'Accept': 'application/vnd.github.raw+json',
+            'Authorization': `Bearer ${BEARER_TOKEN}`
+          }
+      })
+      .then(response => {
+        console
+        if (response.status === 200) {
+          res.status(200).send({'success': true, data: d.data()})
+        } else (
+          res.status(200).send({'success': false, 'error': 'Module was not found. Please try again later.'})
+        )
+      })
+      .catch(error => {
+        res.status(200).send({'success': false, 'error': 'This is a private module. Only users who have authenticated via Github and have access to the module can access this information.'})
+      })
+    }
   }
 }
 
@@ -353,15 +332,7 @@ export const selectModule = async (req, res, next) => {
     moduleSnaps.forEach((doc) => {
       if (doc.data()) {
         const description = doc.data().description ? doc.data().description : ""
-        const m = new Module(
-          doc.id,
-          doc.data().name, 
-          description, 
-          doc.data().link,
-          doc.data().gh_page,
-          doc.data().owner, 
-          doc.data().repo_name
-        );
+        const m = {id: doc.id, ...doc.data()}
         modules.push(m)
       }
     });
@@ -620,4 +591,98 @@ export const getGoogleDocs = async (req, res, next) => {
   } else {
     res.status(200).send({knowledge})
   }
+}
+
+
+export const getRelevantKnowledge = async(req, res, next) => {
+  try {
+    const data = req.body
+    const uid = req.body.user
+    const relevantModules = req.body.modules
+    const userData = await getGithubToken(db, uid)
+
+    let updatedKnowledge = {}
+    let BEARER_TOKEN =  config.devToken
+    if (userData.token) {
+      BEARER_TOKEN = userData.token
+    }
+
+    const requests = []
+    const ghInfo = []
+    const googleInfo = []
+    const googleRequests = []
+
+    Object.entries(relevantModules).forEach((idx) => {
+      if (idx[1]) {
+          const mod = data.modules.find(item => item.id === idx[0]);
+          if (mod) {
+            if (mod?.source === 'google') {
+              googleRequests.push(docs.documents.get({ auth: client, documentId: mod.documentId}))
+              googleInfo.push({name: mod.name, link: mod.doc_page, uid: idx[0]})
+            } 
+            else {
+              const params = {
+                  owner: mod.owner,
+                  repo: mod.repo_name,
+                  path: mod.link
+              }
+              console.log(params, BEARER_TOKEN, `https://api.github.com/repos/${params.owner}/${params.repo}/contents/${params.path}`)
+              requests.push(axios.get(`https://api.github.com/repos/${params.owner}/${params.repo}/contents/${params.path}`, {
+                  headers: {
+                      'Accept': 'application/vnd.github.raw+json',
+                      'Authorization': `Bearer ${BEARER_TOKEN}`
+                  }
+              }))
+              const gh_page = mod.gh_page ? mod.gh_page : ""
+              ghInfo.push({uid: idx[0], link: gh_page, name: mod.name})
+            }
+          }
+      }
+    })
+    
+    axios.all(requests)
+    .then(axios.spread((...responses) => {
+        responses.forEach((response, index) => {
+            if (response.data) {
+              updatedKnowledge[ghInfo[index].uid] = {knowledge: response.data, link: ghInfo[index].link, name: ghInfo[index].name}
+            }
+        });
+
+        Promise.allSettled(googleRequests)
+        .then(googleResults => {
+          googleResults.forEach((response, index) => {
+            if (response.status) {
+              const data = response?.value?.data
+              const body = data?.body 
+              const knowledge = []
+              if (body) {
+          
+                body?.content.forEach(chunk => {
+                  const paragraph = chunk.paragraph
+                  const style = paragraph?.paragraphStyle
+                  const [addStyle, styledMark] = styleToMark(style)
+                  if (addStyle) {
+                    knowledge.push(styledMark)
+                  }
+                  paragraph?.elements.forEach(element => {
+                    const content = element?.textRun?.content
+                    if (content) {
+                      knowledge.push(removeControlCharacters(content))
+                    }
+                  })
+                })
+                const formattedKnowledge = knowledge.join(" ")
+                updatedKnowledge[googleInfo[index].uid] = {knowledge: formattedKnowledge, link: googleInfo[index].link, name: googleInfo[index].name}
+              }
+            }
+          })
+          console.log(updatedKnowledge)
+          res.status(200).send(updatedKnowledge);
+        })
+    }))
+  } catch(error) {
+    console.log(error)
+    res.status(400).send(error)
+  }
+  
 }

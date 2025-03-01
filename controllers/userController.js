@@ -147,4 +147,33 @@ export const updateCount= async(req, res, next) => {
     }
 }
 
-
+export const getUserMessages = async(req, res, next) => {
+    const uid = req.query.uid
+    console.log(uid)
+    if (uid) {
+        const docRef = db.collection('users').doc(data.uid)
+        const user = await docRef.get();
+        if (user.exists) {
+            if (user.data().surveyMessages) {
+                const docRef = db.collection('messages')
+                const results = await docRef.where("uid", "==", uid).orderBy("messageId").get();
+                console.log(results)
+        
+                const messages = []
+                results.forEach((doc) => {
+                    if (doc.data().modules.length > 0) {
+                        const message = {'message': doc.data().message, 'modules': doc.data().modules}
+                        messages.push(message)
+                    }
+                })
+                const output = messages.slice(0, 5)
+        
+                res.status(200).send({'success': true, 'data': output})
+            }
+        } else {
+            res.status(200).send({'success': false, 'err': 'User does not exist'})
+        }
+    } else {
+        res.status(200).send({'success': false, 'err': 'User does not exist'})
+    }
+}

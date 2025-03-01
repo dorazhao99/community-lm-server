@@ -8,6 +8,7 @@ import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { AssertionError } from 'assert'
+import OpenAI from 'openai';
 
 
 const app = express();
@@ -29,6 +30,7 @@ app.use(express.urlencoded({ extended: true, limit: '50mb' }));
 //routes
 app.use('/api', moduleRoute);
 
+
 // error handling
 // app.use(function (req, res, next) {
 //   var err = new Error("Not Found");
@@ -49,5 +51,5 @@ app.use('/api', moduleRoute);
 // });
 
 export {
-  app
+  app,
 }

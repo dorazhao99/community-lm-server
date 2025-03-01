@@ -26,3 +26,21 @@ export const createSurvey = async (req, res, next) => {
         }
     }
 }
+
+export const getPreferencePairs = async (req, res, next) => {  
+    const userRef = db.collection('users').doc(req.query.id)
+    const d = await userRef.get()
+    if (!d.exists) {
+      res.status(200).send({isUser: false})
+    } else {
+        const data = d.data()
+        if (data) {
+            const response = {
+                pairs: d.data().preferencePairs
+            }
+          res.status(200).send(response)
+        } else {
+            res.status(200).send({isUser: false})
+        }
+    }
+}
