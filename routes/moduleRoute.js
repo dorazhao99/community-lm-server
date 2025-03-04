@@ -12,7 +12,8 @@ import {
   getKnowledge,
   deleteModule,
   getStarterPacks,
-  getGoogleDocs
+  getGoogleDocs,
+  addKnowledge
 } from '../controllers/moduleController.js';
 
 import {
@@ -63,9 +64,13 @@ router.post('/selectModule', selectModule)
 router.post('/removeModule', deleteModule)
 router.post('/fetch', readFiles)
 router.post('/get_knowledge', getKnowledge)
+router.get('/getStarter', getStarterPacks)
+router.post('/addKnowledge', addKnowledge)
+
 router.get('/communities', getCommunities)
 router.get('/getCommunity', getCommunity)
 router.post('/selectCommunity', selectCommunity)
+
 router.get('/getUser', getUser)
 router.post('/createUser', createUser)
 router.post('/createGuest', createGuest)
@@ -73,15 +78,16 @@ router.post('/updateUser', updateChecked)
 router.post('/updateCount', updateCount)
 router.post('/queryGPT', queryGPT)
 router.post('/storeMessage', storeMessage)
-router.get('/getStarter', getStarterPacks)
 router.post('/submitSurvey', createSurvey)
 router.get('/getPreferencePairs', getPreferencePairs)
 router.get('/getMessages', getUserMessages)
+
+
 router.get('/admin/getModuleKnowledge', getModuleKnowledge)
 router.post('/admin/createPairs', createPairs)
 
-// router.get('/admin/getMessage', getMessage)
-// router.get('/admin/getUsers', getUsers)
+router.get('/admin/getMessage', getMessage)
+router.get('/admin/getUsers', getUsers)
 
 
 

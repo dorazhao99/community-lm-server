@@ -86,7 +86,18 @@ const newUsers = {
         "09xj9V5SZsbaD4Nnuxe5207brqx1",
         "1VMddeOE60QJ5KxNxcG6Ia8adIo2",
         "fIZvPmUwfwPH9ig4ARWw8DrfJZ73",
-        "rfYescuyLIS3nhQllfqijlEadxK2"
+        "rfYescuyLIS3nhQllfqijlEadxK2",
+        "hrgluvyrEzNsuDmfCJnqTHIK3Pl1"
+    ], 
+    3: [
+        "6zXrp29XltaDzf7OsTFw7vCXWQW2",
+        "AllIIbkhDpeUodrbtOEhUFy9HuU2",
+        "EB3pO1LAMHZd4CIIn4QQR3U7eum1",
+        "IIPsDDKbBubsOeBxuKwsDQQau803",
+        "mIwkBIkNmdQDE79PBlK9C9mL0qv2",
+        "NCc5bOCTRLQiMpiDLDILQZkjrTh2",
+        "XKnTUE84CgWUdfErd0svomjLdDJ2",
+        "iC6cOtg3B4MhTjlm2pZOZ91jX2l1"
     ]
 }
 
