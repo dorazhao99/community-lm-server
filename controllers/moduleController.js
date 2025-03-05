@@ -604,35 +604,44 @@ export const addKnowledge = async(req, res, next) => {
     if (module.exists) {
       if (module.data().source === 'google') {
         const documentId = module.data().documentId
-        const document = await docs.documents.get({auth: client, documentId: documentId });
-        console.log(document.data.body.content)
-        const endIndex = document.data.body.content[document.data.body.content.length - 1].endIndex - 1;
-        console.log(endIndex)
-        const response = await docs.documents.batchUpdate({
-          auth: client,
-          documentId: documentId,
-          requestBody: {
-            requests: [
-              {
-                insertText: {
-                  location: {
-                    index: endIndex,
+        try {
+          const document = await docs.documents.get({auth: client, documentId: documentId });
+          console.log(document.data.body.content)
+          const endIndex = document.data.body.content[document.data.body.content.length - 1].endIndex - 1;
+          console.log(endIndex)
+          const response = await docs.documents.batchUpdate({
+            auth: client,
+            documentId: documentId,
+            requestBody: {
+              requests: [
+                {
+                  insertText: {
+                    location: {
+                      index: endIndex,
+                    },
+                    text: '\n' + data.content,  
                   },
-                  text: '\n' + data.content,  
                 },
-              },
-            ],
-          },
-        });
-        if (response) {
-          console.log(response)
-          res.status(200).send({success: true, link: module.data().doc_page})
+              ],
+            },
+          });
+          if (response) {
+            console.log(response)
+            res.status(200).send({success: true, link: module.data().doc_page})
+          }
+        } catch(error) {
+          const code = error?.code ? error.code : 400
+          let message = 'Sorry, there was a problem updating the document.'
+          if (code === 403) {
+            message = "You do not have access to this document. Ensure the document is publicly editable."
+          }
+          res.status(code).send({success: false, error: message})
         }
 
       } else {
         /* TODO */
         console.log('Github Implementation')
-        res.status(501).send({success: true, link: module.data().gh_page})
+        res.status(501).send({success: false, error: "Clipping to Github documents not available."})
       }
       
     } else {
@@ -647,4 +656,3 @@ export const addKnowledge = async(req, res, next) => {
 
 }
 
-// 
