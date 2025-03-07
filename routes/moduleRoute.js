@@ -52,6 +52,10 @@ import {
   getPreferencePairs
 } from '../controllers/surveyController.js'
 
+import {
+  createLog
+} from '../controllers/logController.js'
+
 const router = express.Router();
 
 router.get('/', getModules);
@@ -77,7 +81,7 @@ router.post('/createUser', createUser)
 router.post('/createGuest', createGuest)
 router.post('/createGist', createGist)
 
-
+router.post('/logAction', createLog)
 
 router.post('/updateUser', updateChecked)
 router.post('/updateCount', updateCount)
