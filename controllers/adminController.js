@@ -87,6 +87,27 @@ const newUsers = {
         "1VMddeOE60QJ5KxNxcG6Ia8adIo2",
         "fIZvPmUwfwPH9ig4ARWw8DrfJZ73",
         "rfYescuyLIS3nhQllfqijlEadxK2"
+    ],
+    3: [
+        "hrgluvyrEzNsuDmfCJnqTHIK3Pl1",
+        "6zXrp29XltaDzf7OsTFw7vCXWQW2",
+        "AllIIbkhDpeUodrbtOEhUFy9HuU2",
+        "EB3pO1LAMHZd4CIIn4QQR3U7eum1",
+        "IIPsDDKbBubsOeBxuKwsDQQau803",
+        "mIwkBIkNmdQDE79PBlK9C9mL0qv2",
+        "NCc5bOCTRLQiMpiDLDILQZkjrTh2",
+        "XKnTUE84CgWUdfErd0svomjLdDJ2",
+        "iC6cOtg3B4MhTjlm2pZOZ91jX2l1",
+        "37XVpoYsPVZmDltph5kmvuFhI6N2",
+        "IUFiws6cjGSJ5CUwDNUSctLUkHV2",
+        "ovY0B8siipVAfFBH99mVFqdqJl13",
+        "PhTiPSQz9nbSQZNvmRUf3SiOWwg1",
+        "B1aZRMor9IPiuzI9KYz1SlPF6303",
+        "zPyzb9aD5paGATeOjnC5tLmBbFc2",
+        "5zJiNn3Me1bgebADIEmen7vol9L2",
+        "gTABrRJsJnOyU1em3G0z7sUaWrW2",
+        "IEWWlGBBtyQUMzVYc2gaQV4rrDB2",
+        "6hcVicjRYoR7DXtKrOWpHQKipTA2"
     ]
 }
 
@@ -298,7 +319,7 @@ export const getModuleKnowledge = async(req, res, next) => {
         const moduleRef = db.collection('modules').doc(moduleId)
         const m = await moduleRef.get();
         const mod = m.data();
-        console.log(mod)
+        
         let formattedKnowledge = ""
         if (mod?.source === 'google') {
             // google call

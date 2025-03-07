@@ -27,7 +27,8 @@ import {
   createGuest,
   updateChecked,
   updateCount,
-  getUserMessages
+  getUserMessages,
+  createGist
 } from '../controllers/userController.js'
 
 import {
@@ -69,6 +70,10 @@ router.post('/selectCommunity', selectCommunity)
 router.get('/getUser', getUser)
 router.post('/createUser', createUser)
 router.post('/createGuest', createGuest)
+router.post('/createGist', createGist)
+
+
+
 router.post('/updateUser', updateChecked)
 router.post('/updateCount', updateCount)
 router.post('/queryGPT', queryGPT)
@@ -80,8 +85,8 @@ router.get('/getMessages', getUserMessages)
 router.get('/admin/getModuleKnowledge', getModuleKnowledge)
 router.post('/admin/createPairs', createPairs)
 
-// router.get('/admin/getMessage', getMessage)
-// router.get('/admin/getUsers', getUsers)
+router.get('/admin/getMessage', getMessage)
+router.get('/admin/getUsers', getUsers)
 
 
 
