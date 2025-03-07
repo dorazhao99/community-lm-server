@@ -2,6 +2,8 @@ import { db } from '../firebase.js';
 import axios from 'axios';
 import { logger } from '../libs/logger.js'
 import config from '../config.js';
+import { getGithubToken } from '../utils.js'
+import { v4 as uuidv4 } from 'uuid';
 
 
 export const getUser = async (req, res, next) => {
@@ -176,4 +178,51 @@ export const getUserMessages = async(req, res, next) => {
     } else {
         res.status(200).send({'success': false, 'err': 'User does not exist'})
     }
+}
+
+export const createGist = async(req, res, next) => {
+    const data = req.body
+    const uid = req.body.uid
+    const userData = await getGithubToken(db, uid)
+    console.log(userData, uid)
+    let BEARER_TOKEN =  config.devToken
+    if (userData.token) {
+        if (data.clipping) {
+            BEARER_TOKEN = userData.token
+            const GIST_URL = "https://api.github.com/gists"
+            const unique = uuidv4();
+            const fileName = `clipping_${unique}.md`
+            const gistBody = {
+                "description": "Clipping created with Knoll to share", 
+                "public": false,
+                "files": {
+                    [fileName]: {"content": data.clipping}
+                }
+            }
+            axios.post(GIST_URL, gistBody, {
+                headers: {
+                    'Accept': 'application/vnd.github+json',
+                    'Authorization': `Bearer ${BEARER_TOKEN}`,
+                }
+            })
+            .then(result => {
+                console.log(result)
+                if (result.data) {
+                    const gistUrl = result.data.html_url 
+                    res.status(200).send({'url': gistUrl})
+                } else {
+                    res.status(400).send('Error creating gist.')
+                }
+            })
+            .catch(error => {
+                console.log(error)
+                res.status(400).send('Error creating gist.')
+            })
+        } else {
+            res.status(400).send('You must send a clipping to share.')
+        }
+    } else {
+        res.status(400).send('You must authenticate your account with Github.')
+    }
+
 }
