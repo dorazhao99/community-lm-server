@@ -6,7 +6,7 @@ import {
   getUserModules,
   getUserModulesOld,
   getModule,
-  addModule,
+  addGithubModule,
   selectModule, 
   readFiles,
   getKnowledge,
@@ -64,7 +64,7 @@ router.get('/exploreModules', getGalleryModules);
 router.get('/userModule', getUserModulesOld);
 router.get('/userModule_v2', getUserModules);
 router.get('/module', getModule)
-router.post('/addModule', addModule)
+router.post('/addGithubModule', addGithubModule)
 router.post('/selectModule', selectModule)
 router.post('/removeModule', deleteModule)
 router.post('/fetch', readFiles)

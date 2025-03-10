@@ -7,25 +7,25 @@ import { v4 as uuidv4 } from 'uuid';
 
 
 export const getUser = async (req, res, next) => {
-    console.log('Params', req.query)
+    console.log('Params user', req.query, req)
   
     const userRef = db.collection('users').doc(req.query.id)
     const d = await userRef.get()
     if (!d.exists) {
       res.status(200).send({isUser: false})
     } else {
-        const data = d.data()
-        if (data) {
-            const response = {
-                checked: data.checked ? data.checked : {},
-                userName: data.userName, 
-                displayName: data.displayName, 
-                isUser: true
-            }
-          res.status(200).send(response)
-        } else {
-            res.status(200).send({isUser: false})
+    const data = d.data()
+    if (data) {
+        const response = {
+            checked: data.checked ? data.checked : {},
+            userName: data.userName, 
+            displayName: data.displayName, 
+            isUser: true
         }
+        res.status(200).send(response)
+    } else {
+        res.status(200).send({isUser: false})
+    }
     }
 }
 

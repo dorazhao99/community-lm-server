@@ -47,41 +47,34 @@ export const getGalleryModules = async (req, res, next) => {
 
 export const getUserModules = async (req, res, next) => {
   try {
-    console.log('Params', req.query)
+    console.log('Params module', req.query)
     const uid = req.query.user
-
-    const docRef = db.collection('users').doc(uid)
-    const user = await docRef.get();
-    const savedModules = user.data().modules; 
-    const checked = user.data().checked;
-    console.log(user.data())
-    const modulesRef = db.collection('modules');
-    // const q = query(collection(db, 'modules'), where(documentId(), 'in', savedModules));
-  
-    const modules = []
-    const modulePromises = savedModules.map(mod => modulesRef.doc(mod).get());
-    const moduleSnaps = await Promise.all(modulePromises);
-
-    moduleSnaps.forEach((doc) => {
-      if (doc.data()) {
-        const description = doc.data().description ? doc.data().description : ""
-        // const m = new Module(
-        //   doc.id,
-        //   doc.data().name, 
-        //   description, 
-        //   doc.data().link,
-        //   doc.data().gh_page,
-        //   doc.data().owner, 
-        //   doc.data().repo_name
-        // );
-        const m = {id: doc.id, ...doc.data()}
-        m.description = description
-        modules.push(m)
-      }
-    });
-  
-   res.status(200).send({modules: modules, checked: checked});
+    if (uid) {
+      const docRef = db.collection('users').doc(uid)
+      const user = await docRef.get();
+      const savedModules = user.data().modules; 
+      const checked = user.data().checked;
+      console.log(user.data())
+      const modulesRef = db.collection('modules');
+      // const q = query(collection(db, 'modules'), where(documentId(), 'in', savedModules));
     
+      const modules = []
+      const modulePromises = savedModules.map(mod => modulesRef.doc(mod).get());
+      const moduleSnaps = await Promise.all(modulePromises);
+  
+      moduleSnaps.forEach((doc) => {
+        if (doc.data()) {
+          const description = doc.data().description ? doc.data().description : ""
+          const m = {id: doc.id, ...doc.data()}
+          m.description = description
+          modules.push(m)
+        }
+      });
+    
+     res.status(200).send({modules: modules, checked: checked});
+    } else {
+      res.status(400).send('No user')
+    } 
   } catch (error) {
     console.error(error)
     res.status(400).send(error.message);
@@ -163,7 +156,7 @@ export const getModule = async (req, res, next) => {
   }
 }
 
-export const addModule = async (req, res, next) => {
+export const addGithubModule = async (req, res, next) => {
   // check auth token here
   const body = req.body;
   const uid = body.uid
@@ -182,7 +175,7 @@ export const addModule = async (req, res, next) => {
 
   // STEP 1: Check if user has access
   try {
-    const link = body.llmLink;
+    const link = body.link;
     const repoInfo = checkRepo(link); 
     console.log('Repo Info', repoInfo, `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`)
     const response = await axios.get(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`, {
@@ -209,12 +202,13 @@ export const addModule = async (req, res, next) => {
             res.status(200).send({success: false, message: "Module is missing name in Markdown."})
           } else {
             const newModule = {
-              gh_page: body.llmLink, 
+              gh_page: body.link, 
               link: repoInfo.fileName,
               owner: repoInfo.owner, 
               repo_name: repoInfo.repo_name, 
               name: body.name, 
               slug: info.slug,
+              source: 'github',
               description: body?.description,
               isGallery: body.isGallery ? body.isGallery : false
             };
@@ -243,7 +237,7 @@ export const addModule = async (req, res, next) => {
           await userRef.update({modules: savedModules})
           res.status(200).send({success: true, message: 'Module added.', id: moduleId})
         } else {
-          res.status(200).send({success: false, message: 'Module already added.'})
+          res.status(200).send({success: false, message: 'Module already added.', id: moduleId})
         }
       } 
     } else if (response.status === 403) {
@@ -466,7 +460,6 @@ export const getKnowledge = async(req, res, next) => {
               }
             }
           })
-          console.log(updatedKnowledge)
           res.status(200).send(updatedKnowledge);
         })
     }))
