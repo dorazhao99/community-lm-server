@@ -39,7 +39,6 @@ export const createUser = async (req, res, next) => {
         const screenName = response.data ? response.data.login : ""
         const docRef = db.collection('users').doc(data.uid)
         const user = await docRef.get();
-        console.log('User', user)
         if (!user.exists) {
             const d = {
                 displayName: data.displayName,
@@ -108,7 +107,6 @@ export const updateChecked= async (req, res, next) => {
     const data = req.body
     const docRef = db.collection('users').doc(data.uid)
     const user = await docRef.get();
-    console.log('User', user)
     if (user.exists) {
         const d = {
             checked: data.checked,
@@ -128,7 +126,6 @@ export const updateChecked= async (req, res, next) => {
 
 export const updateCount= async(req, res, next) => {
     const data = req.body
-    console.log('Count', data)
     const docRef = db.collection('users').doc(data.uid)
     const user = await docRef.get();
     if (user.exists) {
@@ -151,7 +148,6 @@ export const updateCount= async(req, res, next) => {
 
 export const getUserMessages = async(req, res, next) => {
     const uid = req.query.uid
-    console.log(uid)
     if (uid) {
         const docRef = db.collection('users').doc(data.uid)
         const user = await docRef.get();
@@ -159,7 +155,6 @@ export const getUserMessages = async(req, res, next) => {
             if (user.data().surveyMessages) {
                 const docRef = db.collection('messages')
                 const results = await docRef.where("uid", "==", uid).orderBy("messageId").get();
-                console.log(results)
         
                 const messages = []
                 results.forEach((doc) => {
@@ -184,7 +179,7 @@ export const createGist = async(req, res, next) => {
     const data = req.body
     const uid = req.body.uid
     const userData = await getGithubToken(db, uid)
-    console.log(userData, uid)
+
     let BEARER_TOKEN =  config.devToken
     if (userData.token) {
         if (data.clipping) {
@@ -206,7 +201,6 @@ export const createGist = async(req, res, next) => {
                 }
             })
             .then(result => {
-                console.log(result)
                 if (result.data) {
                     const gistUrl = result.data.html_url 
                     res.status(200).send({'url': gistUrl})

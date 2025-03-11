@@ -8,7 +8,6 @@ export const storeMessage = async (req, res, next) => {
 
         if (Array.isArray(data.modules)) {
             data.modules.forEach(module => {
-                console.log(module, data.modules);
                 if (module !== null) {
                     if (module?.name) {
                         savedModules.push(module.name)
@@ -20,7 +19,6 @@ export const storeMessage = async (req, res, next) => {
         } else {
             Object.keys(data.modules).forEach(m => {
                 let module = data.modules[m]
-                console.log(m, module, data.modules)
                 if (module !== null) {
                     if (module?.name) {
                         savedModules.push(module.name)
@@ -49,8 +47,8 @@ export const storeMessage = async (req, res, next) => {
         }
 
         try {
-            await db.collection('messages').doc(data.messageId).set(d);
-            console.log('Document successfully created!');
+            // await db.collection('messages').doc(data.messageId).set(d);
+            // console.log('Document successfully created!');
             res.status(200).send({'success': true})
         }
         catch (error) {

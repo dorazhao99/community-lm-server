@@ -85,7 +85,6 @@ export const getCommunity = async (req, res, next) => {
                 }
             })
             commData['moduleIds'] = moduleIds
-            console.log(commData)
             if (isPrivate) {
                 res.status(200).send({'success': false, 'error': 'This is a private module. Only users who have authenticated via Github and have access to the module can access this information.'})
             } else {
@@ -125,7 +124,6 @@ export const getCommunity = async (req, res, next) => {
     else {
       moduleIds.forEach(moduleId => {
         const isFound = checkUIDExists(savedModules, moduleId)
-        console.log('found', isFound)
         if (!isFound) {
           savedModules.push(moduleId)
         }

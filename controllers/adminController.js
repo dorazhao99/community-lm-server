@@ -180,9 +180,6 @@ export const getMessage = async(req, res, next) => {
             }
         }
     })
-    console.log(allMessages)
-    console.log(uid2activated)
-    console.log(newUsers[idx].length, allDocs.length, count)
     res.status(200).send(allDocs)
 }
 
@@ -198,7 +195,6 @@ export const getUsers = async(req, res, next) => {
             numMessages: user.data().numMessages
         }
     })
-    console.log(users)
     res.status(200).send(users)
 }
 
@@ -234,7 +230,6 @@ export const getKnowledge = async(req, res, next) => {
       if (idx[1]) {
           const mod = data.modules.find(item => item.id === idx[0]);
           if (mod) {
-            console.log('Mod', mod)
             if (mod?.source === 'google') {
               googleRequests.push(docs.documents.get({ auth: client, documentId: mod.documentId}))
               googleInfo.push({name: mod.name, link: mod.doc_page, uid: idx[0]})
@@ -245,7 +240,6 @@ export const getKnowledge = async(req, res, next) => {
                   repo: mod.repo_name,
                   path: mod.link
               }
-              console.log(params, BEARER_TOKEN, `https://api.github.com/repos/${params.owner}/${params.repo}/contents/${params.path}`)
               requests.push(axios.get(`https://api.github.com/repos/${params.owner}/${params.repo}/contents/${params.path}`, {
                   headers: {
                       'Accept': 'application/vnd.github.raw+json',
@@ -295,7 +289,6 @@ export const getKnowledge = async(req, res, next) => {
               }
             }
           })
-          console.log(updatedKnowledge)
           res.status(200).send(updatedKnowledge);
         })
     }))
@@ -352,7 +345,6 @@ export const getModuleKnowledge = async(req, res, next) => {
                 repo: mod.repo_name,
                 path: mod.link
             }
-            console.log(params)
             // axios call
             const response = await axios.get(`https://api.github.com/repos/${params.owner}/${params.repo}/contents/${params.path}`, {
                 headers: {
@@ -375,7 +367,6 @@ export const getModuleKnowledge = async(req, res, next) => {
 export const createPairs = async(req, res, next) => {
      // check auth token here
      const data = req.body
-     console.log(data)
      try {
         if (data.uid) {
             const docRef = db.collection('users').doc(data.uid)
@@ -384,7 +375,6 @@ export const createPairs = async(req, res, next) => {
                 const d = {
                     preferencePairs: JSON.parse(data.preferencePairs)
                 }
-                console.log(d)
                 await docRef.update(d)
                 res.status(200).send({data: d})
             } else {

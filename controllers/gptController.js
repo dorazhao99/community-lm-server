@@ -24,17 +24,14 @@ async function chat(client, query, knowledge, name) {
 export const queryGPT = async(req, res, next) => {
     const relevantModules = []
 
-    console.log('OpenAI', config.openai)
     const client = new OpenAI({
         apiKey: config.openai, // This is the default and can be omitted
     });
 
     const gptCalls = []
-    console.log('Body', req.body.modules)
     const moduleKnowledges = JSON.parse(req.body.modules)
     const query = req.body.query 
     
-    console.log(Object.keys(moduleKnowledges))
     Object.keys(moduleKnowledges).forEach(name => {
         const module = moduleKnowledges[name]
         gptCalls.push(chat(client, query, module.knowledge, name))
@@ -45,13 +42,11 @@ export const queryGPT = async(req, res, next) => {
         response.forEach(r => {
             r.logprob.forEach(logprob => {
                 const p = Math.exp(logprob.logprob)
-                console.log(r.module, logprob, p)
                 if (logprob.token === 'True' && p >= 0.3) {
                     relevantModules.push(r.module)
                 }
             })
         })
-        console.log(relevantModules)
         res.status(200).send(relevantModules)
     });
 

@@ -47,14 +47,12 @@ export const getGalleryModules = async (req, res, next) => {
 
 export const getUserModules = async (req, res, next) => {
   try {
-    console.log('Params module', req.query)
     const uid = req.query.user
     if (uid) {
       const docRef = db.collection('users').doc(uid)
       const user = await docRef.get();
       const savedModules = user.data().modules; 
       const checked = user.data().checked;
-      console.log(user.data())
       const modulesRef = db.collection('modules');
       // const q = query(collection(db, 'modules'), where(documentId(), 'in', savedModules));
     
@@ -83,14 +81,12 @@ export const getUserModules = async (req, res, next) => {
 
 export const getUserModulesOld = async (req, res, next) => {
   try {
-    console.log('Params', req.query)
     const uid = req.query.user
 
     const docRef = db.collection('users').doc(uid)
     const user = await docRef.get();
     const savedModules = user.data().modules; 
     const checked = user.data().checked;
-    console.log(user.data())
     const modulesRef = db.collection('modules');
     // const q = query(collection(db, 'modules'), where(documentId(), 'in', savedModules));
   
@@ -177,7 +173,6 @@ export const addGithubModule = async (req, res, next) => {
   try {
     const link = body.link;
     const repoInfo = checkRepo(link); 
-    console.log('Repo Info', repoInfo, `https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`)
     const response = await axios.get(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`, {
       headers: {
           'Accept': 'application/vnd.github.raw+json',
@@ -195,7 +190,6 @@ export const addGithubModule = async (req, res, next) => {
           // STEP 2b: Add module
           let data = response.data
           let info = interpretMarkdown(data)
-          console.log('Info', info)
           if (!info) {
             res.status(200).send({success: false, message: "Repo formatted incorrectly."})
           } else if (!info.name) {
@@ -217,7 +211,6 @@ export const addGithubModule = async (req, res, next) => {
             await db.collection("modules").add(newModule)
             .then((docRef) => {
                 id = docRef.id
-                console.log("Document written with ID: ", docRef.id);
                 savedModules.push(docRef.id)
                 userRef.update({modules: savedModules}).then(() => {
                   res.status(200).send({success: true, message: 'Module added.', id: docRef.id})
@@ -310,7 +303,6 @@ export const selectModule = async (req, res, next) => {
   } 
   else {
     const isFound = checkUIDExists(savedModules, moduleId)
-    console.log('found', isFound)
     if (!isFound) {
       savedModules.push(moduleId)
     }
@@ -399,7 +391,6 @@ export const getKnowledge = async(req, res, next) => {
       if (idx[1]) {
           const mod = data.modules.find(item => item.id === idx[0]);
           if (mod) {
-            console.log('Mod', mod)
             if (mod?.source === 'google') {
               googleRequests.push(docs.documents.get({ auth: client, documentId: mod.documentId}))
               googleInfo.push({name: mod.name, link: mod.doc_page, uid: idx[0]})
@@ -410,7 +401,6 @@ export const getKnowledge = async(req, res, next) => {
                   repo: mod.repo_name,
                   path: mod.link
               }
-              console.log(params, BEARER_TOKEN, `https://api.github.com/repos/${params.owner}/${params.repo}/contents/${params.path}`)
               requests.push(axios.get(`https://api.github.com/repos/${params.owner}/${params.repo}/contents/${params.path}`, {
                   headers: {
                       'Accept': 'application/vnd.github.raw+json',
@@ -485,7 +475,6 @@ export const getStarterPacks = async  (req, res, next) => {
     let returnInfo = {'modules': {}}
     moduleSnaps.forEach((moduleSnap, idx) => {
       const module = moduleSnap.data()
-      console.log(idx, module, moduleRefs)
       const sectionName = moduleRefs[idx].section
       if (!(sectionName in returnInfo['modules'])) {
         returnInfo['modules'][sectionName] = []
@@ -599,9 +588,7 @@ export const addKnowledge = async(req, res, next) => {
         const documentId = module.data().documentId
         try {
           const document = await docs.documents.get({auth: client, documentId: documentId });
-          console.log(document.data.body.content)
           const endIndex = document.data.body.content[document.data.body.content.length - 1].endIndex - 1;
-          console.log(endIndex)
           const response = await docs.documents.batchUpdate({
             auth: client,
             documentId: documentId,
@@ -633,7 +620,6 @@ export const addKnowledge = async(req, res, next) => {
 
       } else {
         /* TODO */
-        console.log('Github Implementation')
         res.status(501).send({success: false, error: "Clipping to Github documents not available."})
       }
       

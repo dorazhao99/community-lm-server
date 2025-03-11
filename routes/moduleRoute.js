@@ -92,11 +92,11 @@ router.get('/getPreferencePairs', getPreferencePairs)
 router.get('/getMessages', getUserMessages)
 
 
-router.get('/admin/getModuleKnowledge', getModuleKnowledge)
-router.post('/admin/createPairs', createPairs)
+// router.get('/admin/getModuleKnowledge', getModuleKnowledge)
+// router.post('/admin/createPairs', createPairs)
 
-router.get('/admin/getMessage', getMessage)
-router.get('/admin/getUsers', getUsers)
+// router.get('/admin/getMessage', getMessage)
+// router.get('/admin/getUsers', getUsers)
 
 
 
