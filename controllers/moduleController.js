@@ -54,7 +54,6 @@ export const getUserModules = async (req, res, next) => {
       const savedModules = user.data().modules; 
       const checked = user.data().checked;
       const modulesRef = db.collection('modules');
-      // const q = query(collection(db, 'modules'), where(documentId(), 'in', savedModules));
     
       const modules = []
       const modulePromises = savedModules.map(mod => modulesRef.doc(mod).get());

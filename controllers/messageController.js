@@ -47,8 +47,8 @@ export const storeMessage = async (req, res, next) => {
         }
 
         try {
-            // await db.collection('messages').doc(data.messageId).set(d);
-            // console.log('Document successfully created!');
+            await db.collection('messages').doc(data.messageId).set(d);
+            console.log('Document successfully created!');
             res.status(200).send({'success': true})
         }
         catch (error) {

@@ -1,7 +1,4 @@
 import { db } from '../firebase.js';
-import axios from 'axios';
-import { logger } from '../libs/logger.js'
-import config from '../config.js';
 import { v4 as uuidv4 } from 'uuid';
 
 export const createLog = async (req, res, next) => {
