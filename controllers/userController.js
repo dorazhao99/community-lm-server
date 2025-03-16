@@ -232,6 +232,20 @@ export const deleteChip = async (req, res, next) => {
             checked[moduleId] = false
             await docRef.update({'checked': checked})
             .then(_ => {
+
+                console.log("Deleted chip")
+                    // log action
+                const d = {
+                    uid: data.uid, 
+                    action: 'delete_chip',
+                    id: moduleId, 
+                    score: data.score, 
+                    message: data.message ? data.message : "",
+                    time: Date.now()
+                }
+        
+                const logId = uuidv4()
+                db.collection('logs').doc(logId).set(d)
                 res.status(200).send({'success': true, checked: checked, modules: user.data().modules, moduleId: moduleId})
             })
             .catch(error => {
@@ -239,25 +253,6 @@ export const deleteChip = async (req, res, next) => {
                 res.status(400).send({'success': false})
             })
 
-            // console.log("Deleted chip")
-            //     // log action
-            // const d = {
-            //     uid: data.uid, 
-            //     action: 'delete_chip',
-            //     id: moduleId, 
-            //     score: data.score, 
-            //     time: Date.now()
-            // }
-    
-            // const logId = uuidv4()
-            // await db.collection('logs').doc(logId).set(d)
-            // .then(_ => {
-            //     res.status(200).send({'success': true, checked: checked, modules: user.data().modules})
-            // })
-            // .catch(error => {
-            //     console.error(error)
-            //     res.status(200).send({'success': true, checked: checked, modules: user.data().modules})
-            // })
         } else {
             res.status(400).send({'success': false})
         }
