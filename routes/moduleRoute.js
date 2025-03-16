@@ -29,7 +29,8 @@ import {
   updateChecked,
   updateCount,
   getUserMessages,
-  createGist
+  createGist,
+  deleteChip
 } from '../controllers/userController.js'
 
 import {
@@ -80,6 +81,7 @@ router.get('/getUser', getUser)
 router.post('/createUser', createUser)
 router.post('/createGuest', createGuest)
 router.post('/createGist', createGist)
+router.post('/deleteChip', deleteChip)
 
 router.post('/logAction', createLog)
 

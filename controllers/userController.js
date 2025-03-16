@@ -220,3 +220,48 @@ export const createGist = async(req, res, next) => {
     }
 
 }
+
+export const deleteChip = async (req, res, next) => {
+    const data = req.body
+    if (data.uid && data.module.id) {
+        let moduleId = data.module.id
+        const docRef = db.collection('users').doc(data.uid)
+        const user = await docRef.get();
+        if (user.exists) {
+            let checked = user.data().checked
+            checked[moduleId] = false
+            await docRef.update({'checked': checked})
+            .then(_ => {
+                res.status(200).send({'success': true, checked: checked, modules: user.data().modules, moduleId: moduleId})
+            })
+            .catch(error => {
+                console.error(error)
+                res.status(400).send({'success': false})
+            })
+
+            // console.log("Deleted chip")
+            //     // log action
+            // const d = {
+            //     uid: data.uid, 
+            //     action: 'delete_chip',
+            //     id: moduleId, 
+            //     score: data.score, 
+            //     time: Date.now()
+            // }
+    
+            // const logId = uuidv4()
+            // await db.collection('logs').doc(logId).set(d)
+            // .then(_ => {
+            //     res.status(200).send({'success': true, checked: checked, modules: user.data().modules})
+            // })
+            // .catch(error => {
+            //     console.error(error)
+            //     res.status(200).send({'success': true, checked: checked, modules: user.data().modules})
+            // })
+        } else {
+            res.status(400).send({'success': false})
+        }
+    } else {
+        res.status(400).send({'success': false})
+    }
+}
