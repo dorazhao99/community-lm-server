@@ -163,10 +163,7 @@ export const addGithubModule = async (req, res, next) => {
       res.status(400).send({error: 'User does not exist'})
   }  
   const userData = user.data()
-  const savedModules = [...userData.modules]
-
-
-
+  const token = userData.token ? userData.token : config.devToken
 
   // STEP 1: Check if user has access
   try {
@@ -175,7 +172,7 @@ export const addGithubModule = async (req, res, next) => {
     const response = await axios.get(`https://api.github.com/repos/${repoInfo.owner}/${repoInfo.repo_name}/contents/${repoInfo.fileName}`, {
       headers: {
           'Accept': 'application/vnd.github.raw+json',
-          'Authorization': `Bearer ${userData.token}`
+          'Authorization': `Bearer ${token}`
         }
     })
 
@@ -203,34 +200,31 @@ export const addGithubModule = async (req, res, next) => {
               slug: info.slug,
               source: 'github',
               description: body?.description,
-              isGallery: body.isGallery ? body.isGallery : false
+              pendingReview: body.isGallery ? body.isGallery : false
             };
             
             // Add the document
             await db.collection("modules").add(newModule)
             .then((docRef) => {
-                id = docRef.id
-                savedModules.push(docRef.id)
-                userRef.update({modules: savedModules}).then(() => {
-                  res.status(200).send({success: true, message: 'Module added.', id: docRef.id})
-                })
+                res.status(200).send({success: true, message: 'Module added.', id: docRef.id})
             })
             .catch((error) => {
               console.error("Error adding document: ", error);
             });
           }
       } else {
-        const moduleId = querySnapshot.docs[0].id
-        const moduleRef = db.collection("modules").doc(moduleId)
-        await moduleRef.update({name: body.name, isGallery: true})
-        const isFound = checkUIDExists(savedModules, moduleId)
-        if (!isFound) {
-          savedModules.push(querySnapshot.docs[0].id)
-          await userRef.update({modules: savedModules})
-          res.status(200).send({success: true, message: 'Module added.', id: moduleId})
-        } else {
-          res.status(200).send({success: false, message: 'Module already added.', id: moduleId})
-        }
+        res.status(200).send({success: false, message: 'Module already added.'})
+        // const moduleId = querySnapshot.docs[0].id
+        // const moduleRef = db.collection("modules").doc(moduleId)
+        // await moduleRef.update({name: body.name, isGallery: true})
+        // const isFound = checkUIDExists(savedModules, moduleId)
+        // if (!isFound) {
+        //   savedModules.push(querySnapshot.docs[0].id)
+        //   await userRef.update({modules: savedModules})
+        //   res.status(200).send({success: true, message: 'Module added.', id: moduleId})
+        // } else {
+        //   res.status(200).send({success: false, message: 'Module already added.', id: moduleId})
+        // }
       } 
     } else if (response.status === 403) {
       res.status(200).send({success: false, message: 'You do not have access to this module.'})
@@ -243,6 +237,66 @@ export const addGithubModule = async (req, res, next) => {
     res.status(200).send({success: false, message: error})
   }
 };
+
+export const addGoogleModule = async (req, res, next) => {
+  // check auth token here
+  const body = req.body;
+  const uid = body.uid
+  const userRef = db.collection('users').doc(uid)
+
+  // Check if user exists
+  const user= await userRef.get()
+  if (!user.exists) {
+      res.status(400).send({success: false, message: 'User does not exist'})
+  }  
+  const userData = user.data()
+  const savedModules = [...userData.modules]
+
+  // STEP 1: Get Document ID
+  const link = body?.link 
+  if (link) {
+    const docId = link.match(/\/d\/([^\/]+)\//)[1];
+    console.log(docId)
+    if (docId) {
+      try {
+        const response = await docs.documents.get({ auth: client, documentId: docId})
+        // STEP 2: Check to make sure it does not exist
+        const modulesRef = db.collection("modules");
+        const querySnapshot = await modulesRef.where("documentId", "==", docId).get();
+        if (querySnapshot.empty) {
+          const newModule = {
+            doc_page: link, 
+            documentId: docId,
+            name: body.name, 
+            source: 'google',
+            description: body.description ? body.description : "",
+            pendingReview: body.isGallery ? body.isGallery : false
+          };
+
+          await db.collection("modules").add(newModule)
+          .then((docRef) => {
+            res.status(200).send({success: true, message: 'Module added.', id: docRef.id})
+          })
+          .catch((error) => {
+            console.log("Error adding document: ", error);
+            res.status(400).send({success: false, message: 'Error adding document.'})
+          });
+        } else {
+          res.status(400).send({success: false, message: 'Module has already been added.'})
+        }
+      } catch(error) {
+        console.log(error)
+        if (error?.response?.status === 403) {
+          res.status(403).send({success: false, message: 'Make sure the Google Doc is publicly viewable.'})
+        } else {
+          res.status(400).send({success: false, message: `Could not find linked Google Doc.`})
+        }
+      }
+    } else {
+      res.status(400).send({success: false, message: `Invalid doc id ${docId}`})
+    }
+  }
+}
 
 export const deleteModule = async (req, res, next) => {
   const body = req.body;
