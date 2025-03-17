@@ -587,9 +587,9 @@ function styleToMark(style) {
 
 function removeControlCharacters(str) {
   if (str) {
-    return str.replace(/[\u0000-\u001F\u007F-\u009F]/g, '');
+    return str.replace(/[\u0000-\u001F\u007F-\u009F]/g, '') + '\n';
   } else {
-    return str
+    return str + '\n'
   }
 }
 
