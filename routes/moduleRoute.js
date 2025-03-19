@@ -99,7 +99,7 @@ router.get('/getPreferencePairs', getPreferencePairs)
 router.get('/getTechnicalPairs', getTechnicalPairs)
 router.post('/setAnnotations', setAnnotations)
 
-router.get('/getMessages', getUserMessages)
+// router.get('/getMessages', getUserMessages)
 
 
 // router.post('/admin/createTechnical', createTechnical)
