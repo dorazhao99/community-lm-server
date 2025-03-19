@@ -47,7 +47,7 @@ import {
   getUsers,
   getModuleKnowledge,
   createPairs,
-  createTechnical
+  // createTechnical
 } from '../controllers/adminController.js'
 
 import {
@@ -102,7 +102,7 @@ router.post('/setAnnotations', setAnnotations)
 router.get('/getMessages', getUserMessages)
 
 
-router.post('/admin/createTechnical', createTechnical)
+// router.post('/admin/createTechnical', createTechnical)
 // router.get('/admin/getModuleKnowledge', getModuleKnowledge)
 // router.post('/admin/createPairs', createPairs)
 
