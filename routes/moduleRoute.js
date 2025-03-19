@@ -46,12 +46,15 @@ import {
   getMessage,
   getUsers,
   getModuleKnowledge,
-  createPairs
+  createPairs,
+  createTechnical
 } from '../controllers/adminController.js'
 
 import {
   createSurvey,
-  getPreferencePairs
+  getPreferencePairs,
+  getTechnicalPairs,
+  setAnnotations
 } from '../controllers/surveyController.js'
 
 import {
@@ -93,9 +96,13 @@ router.post('/queryGPT', queryGPT)
 router.post('/storeMessage', storeMessage)
 router.post('/submitSurvey', createSurvey)
 router.get('/getPreferencePairs', getPreferencePairs)
+router.get('/getTechnicalPairs', getTechnicalPairs)
+router.post('/setAnnotations', setAnnotations)
+
 router.get('/getMessages', getUserMessages)
 
 
+router.post('/admin/createTechnical', createTechnical)
 // router.get('/admin/getModuleKnowledge', getModuleKnowledge)
 // router.post('/admin/createPairs', createPairs)
 
