@@ -88,7 +88,8 @@ export const createGuest = async (req, res, next) => {
             const d = {
                 modules: ['Owpgm2DXhp0a0dnM1gZa'],
                 numMessages: 0,
-                checked: {}
+                checked: {},
+                createTime: Date.now()
             }
             try {
                 await db.collection('users').doc(data.uid).set(d);
@@ -140,6 +141,26 @@ export const updateCount= async(req, res, next) => {
         } catch (error) {
             console.log(error)
             res.status(200).send({'success': false, 'err': error})
+        }
+    } else {
+        res.status(200).send({'success': false, 'err': 'User does not exist'})
+    }
+}
+
+export const updateUser= async(req, res, next) => {
+    const data = req.body
+    console.log('Update', data)
+    const docRef = db.collection('users').doc(data.uid)
+    const user = await docRef.get();
+    console.log(user)
+    if (user.exists) {
+        try {
+            const result = await docRef.update(data)
+            console.log('Document successfully updated!');
+            res.status(200).send({'success': true, 'res': result})
+        } catch (error) {
+            console.log('Error', error)
+            res.status(200).send({'success': false, 'err': user})
         }
     } else {
         res.status(200).send({'success': false, 'err': 'User does not exist'})

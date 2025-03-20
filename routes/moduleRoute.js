@@ -31,7 +31,8 @@ import {
   updateCount,
   getUserMessages,
   createGist,
-  deleteChip
+  deleteChip,
+  updateUser
 } from '../controllers/userController.js'
 
 import {
@@ -98,7 +99,7 @@ router.post('/submitSurvey', createSurvey)
 router.get('/getPreferencePairs', getPreferencePairs)
 router.get('/getTechnicalPairs', getTechnicalPairs)
 router.post('/setAnnotations', setAnnotations)
-
+router.post('/updateUserInfo', updateUser)
 // router.get('/getMessages', getUserMessages)
 
 

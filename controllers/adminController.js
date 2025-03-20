@@ -390,3 +390,10 @@ export const createPairs = async(req, res, next) => {
         res.status(400).send({data: error})
     }
 }
+
+export const createTechnical = async(req, res, next) => {
+    // check auth token here
+    const document = req.body
+    await db.collection('evaluation').doc("1").set(document);
+    res.status(200).send("Split added")
+}
